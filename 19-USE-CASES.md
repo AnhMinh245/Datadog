@@ -723,7 +723,7 @@ public class PlayerMonitoring : MonoBehaviour {
 
 Áp dụng những patterns này vào use case của bạn!
 
-**Quay lại**: [README](README.md) để xem tổng quan khóa học
+**Quay lại**: [README](README.md) để xem tổng quan knowledge base
 
 ---
 

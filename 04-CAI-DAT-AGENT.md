@@ -775,9 +775,9 @@ K8s:      ConfigMap or Helm values
 
 ---
 
-## 🎯 Bài Tập
+## 🤔 Câu Hỏi Cần Biết
 
-### Exercise 1: Basic Installation
+### Deployment considerations:
 
 ```
 1. Tạo tài khoản Datadog trial
@@ -786,7 +786,7 @@ K8s:      ConfigMap or Helm values
 4. Take screenshot của Infrastructure List
 ```
 
-### Exercise 2: Configuration
+### Configuration decisions:
 
 ```
 1. Add custom tags:
@@ -801,7 +801,7 @@ K8s:      ConfigMap or Helm values
    với tags của bạn
 ```
 
-### Exercise 3: Docker Lab
+### Container deployment:
 
 ```
 1. Run Datadog Agent container
@@ -814,7 +814,7 @@ K8s:      ConfigMap or Helm values
 4. Check logs của nginx trong Datadog UI
 ```
 
-### Exercise 4: Troubleshooting
+### Troubleshooting checklist:
 
 ```
 Scenario: Agent installed but no data

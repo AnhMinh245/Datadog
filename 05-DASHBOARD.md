@@ -790,9 +790,9 @@ Widgets:
 
 ---
 
-## 🎯 Bài Tập
+## 🤔 Dashboard Design Decisions
 
-### Exercise 1: Create System Dashboard
+### System monitoring dashboard:
 
 ```
 Tạo dashboard cho system monitoring:
@@ -813,7 +813,7 @@ Bonus:
 - Add note widget with thresholds
 ```
 
-### Exercise 2: Application Dashboard
+### Application monitoring dashboard:
 
 ```
 Tạo dashboard cho web application:
@@ -831,7 +831,7 @@ Advanced:
 - Add custom links to logs
 ```
 
-### Exercise 3: Template Variables
+### Template variables strategy:
 
 ```
 Tạo dashboard với template variables:
@@ -845,7 +845,7 @@ All widgets phải dùng variables
 Test bằng cách switch giữa các values
 ```
 
-### Exercise 4: Export & Share
+### Sharing & export considerations:
 
 ```
 Tasks:

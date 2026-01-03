@@ -937,9 +937,9 @@ elif level in ['ERROR', 'CRITICAL']:
 
 ---
 
-## 🎯 Bài Tập
+## 🤔 Log Strategy Decisions
 
-### Exercise 1: Collect Logs
+### Log collection strategy:
 
 ```
 1. Enable logs in Agent
@@ -950,7 +950,7 @@ elif level in ['ERROR', 'CRITICAL']:
 5. View in Logs Explorer
 ```
 
-### Exercise 2: Structured Logging
+### Structured logging approach:
 
 ```python
 # Write Python script that logs:
@@ -970,7 +970,7 @@ Each log must include:
 Send to Datadog via HTTP API
 ```
 
-### Exercise 3: Log Search
+### Log search patterns:
 
 ```
 In Logs Explorer:
@@ -982,7 +982,7 @@ In Logs Explorer:
 5. Create saved view
 ```
 
-### Exercise 4: Log Monitor
+### Log monitoring setup:
 
 ```
 Create monitor:

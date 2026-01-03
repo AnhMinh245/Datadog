@@ -731,9 +731,9 @@ sum:http.requests{*} by {service,status}
 
 ---
 
-## 🎯 Bài Tập
+## 🤔 Kiểm Tra Hiểu Biết
 
-### Exercise 1: Terminology Quiz
+### Thuật ngữ cơ bản:
 
 Điền định nghĩa:
 ```
@@ -743,7 +743,7 @@ sum:http.requests{*} by {service,status}
 4. Tag cardinality là gì: _____
 ```
 
-### Exercise 2: Tagging Strategy
+### Thiết kế tagging:
 
 Thiết kế tags cho hệ thống:
 ```
@@ -759,7 +759,7 @@ region: _____
 ...
 ```
 
-### Exercise 3: Data Type Selection
+### Lựa chọn data type:
 
 Chọn đúng data type:
 ```

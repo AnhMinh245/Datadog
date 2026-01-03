@@ -821,9 +821,9 @@ statsd.increment('requests', request_count)
 
 ---
 
-## 🎯 Bài Tập
+## 🤔 Metrics Design Decisions
 
-### Exercise 1: Send Custom Metrics
+### Custom metrics implementation:
 
 ```python
 # Tạo script gửi custom metrics
@@ -839,7 +839,7 @@ Run script 10 times
 Verify metrics trong UI
 ```
 
-### Exercise 2: Business Metrics
+### Business metrics strategy:
 
 ```python
 # Simulate e-commerce metrics
@@ -859,7 +859,7 @@ Send random data for 5 minutes
 Create dashboard to visualize
 ```
 
-### Exercise 3: Monitoring Pattern
+### Monitoring pattern application:
 
 ```
 Implement RED method for fake API:
@@ -880,7 +880,7 @@ Create dashboard showing:
 - p95 latency by endpoint
 ```
 
-### Exercise 4: Cost Analysis
+### Cost analysis:
 
 ```
 Calculate custom metric count:

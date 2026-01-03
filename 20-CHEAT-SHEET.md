@@ -740,7 +740,7 @@ sudo datadog-agent flare
 
 ---
 
-**🎉 Chúc mừng! Bạn đã hoàn thành khóa học Datadog!**
+**🎉 Knowledge Base Reference - Luôn Có Sẵn Khi Bạn Cần!**
 
 Keep this cheat sheet handy for quick reference. Practice makes perfect!
 

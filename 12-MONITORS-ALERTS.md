@@ -900,9 +900,9 @@ KEY POINTS:
 
 ---
 
-## 🎯 Bài Tập
+## 🤔 Alerting Strategy Decisions
 
-### Exercise 1: Basic Monitor
+### Basic monitor design:
 
 ```
 Create monitor:
@@ -915,7 +915,7 @@ Create monitor:
 7. Verify alert received
 ```
 
-### Exercise 2: Composite Monitor
+### Composite monitor approach:
 
 ```
 Create composite monitor:
@@ -926,7 +926,7 @@ Create composite monitor:
 5. Verify single composite alert
 ```
 
-### Exercise 3: Anomaly Detection
+### Anomaly detection configuration:
 
 ```
 Create anomaly monitor:
@@ -937,7 +937,7 @@ Create anomaly monitor:
 5. Verify detection
 ```
 
-### Exercise 4: Monitor Cleanup
+### Monitor optimization:
 
 ```
 Audit your monitors:

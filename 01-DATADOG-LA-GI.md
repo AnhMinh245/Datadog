@@ -391,14 +391,14 @@ Total: ~$2,550/month
 
 ---
 
-## 🎯 Bài Tập
+## 🤔 Kiểm Tra Hiểu Biết
 
-### Exercise 1: Research
+### Câu hỏi tự đánh giá:
 1. Tạo tài khoản Datadog trial (14 ngày free)
 2. Explore Dashboard mẫu
 3. Xem video tour trên YouTube
 
-### Exercise 2: Tự Đánh Giá
+### Tình huống quyết định:
 Trả lời các câu hỏi:
 ```
 1. Datadog giải quyết vấn đề gì?
@@ -407,7 +407,7 @@ Trả lời các câu hỏi:
 4. So sánh Datadog vs Prometheus?
 ```
 
-### Exercise 3: Use Case
+### Phân tích use case:
 Viết ra use case của công ty/dự án bạn:
 ```
 - Hệ thống hiện tại như thế nào?

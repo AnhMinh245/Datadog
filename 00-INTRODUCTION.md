@@ -1,180 +1,239 @@
-# 📚 DATADOG - TRIỂN KHAI CHO NGÂN HÀNG
+# 📚 DATADOG KNOWLEDGE BASE - CẨM NANG KIẾN THỨC
 
-## 🎯 Mục Tiêu
+## 🎯 Mục Đích
 
-Tài liệu này được thiết kế để giúp bạn:
-- **Hiểu bản chất** của Datadog và Observability từ cơ bản đến nâng cao
-- **Nắm vững architecture** và design decisions
-- **Triển khai thực tế** cho khách hàng ngân hàng
-- **Áp dụng best practices** cho banking systems
-- **Đáp ứng yêu cầu** compliance và security
+**Đây là gì:**
+> Cẩm nang kiến thức Datadog, tập trung vào **concepts cốt lõi**, **bản chất hoạt động**, và **banking context**.
 
-## 🏦 Focus: Banking Implementation
+**Không phải:**
+- ❌ Tutorial từng bước
+- ❌ Hands-on lab guide  
+- ❌ Getting started guide
+- ❌ Command reference
 
-**Khác biệt của tài liệu này:**
-- ✅ Tập trung vào **triển khai** (deployment), không phải vận hành (operation)
-- ✅ Giải thích **bản chất**, không chỉ how-to
-- ✅ Banking use cases và requirements
-- ✅ Enterprise security & compliance
-- ✅ Production-ready practices
-
-## 📖 Cấu Trúc Tài Liệu
-
-### **Phần 1: Nền Tảng & Kiến Trúc**
-- [01 - Datadog Là Gì?](01-DATADOG-LA-GI.md) - Giới thiệu, enterprise features, banking use cases
-- [02 - Khái Niệm Cơ Bản](02-KHAI-NIEM-CO-BAN.md) - Metrics, Logs, Traces - Hiểu bản chất
-- [03 - Kiến Trúc Datadog](03-KIEN-TRUC-DATADOG.md) - Architecture, security, data flow
-
-### **Phần 2: Triển Khai Core**
-- [04 - Triển Khai Agent](04-CAI-DAT-AGENT.md) - Deployment strategies cho banking
-- [05 - Dashboard Enterprise](05-DASHBOARD.md) - Executive dashboards, compliance reporting
-- [06 - Metrics Strategy](06-METRICS.md) - Business metrics, SLA tracking
-
-### **Phần 3: Banking Observability**
-- [07 - APM cho Banking](07-APM.md) - Transaction tracing, critical paths
-- [08 - Log Management](08-LOG-MANAGEMENT.md) - Compliance, audit trails, security
-
-### **Phần 4: Production Readiness**
-- [12 - Enterprise Alerting](12-MONITORS-ALERTS.md) - SLA monitoring, escalation
-- [16 - Banking Best Practices](16-BEST-PRACTICES.md) - Security, compliance, cost
-
-### **Phần 5: Implementation Guide**
-- [19 - Banking Use Cases](19-USE-CASES.md) - Core banking, API banking, mobile
-- [20 - Deployment Checklist](20-CHEAT-SHEET.md) - Quick reference cho implementation
-- [21 - 🏦 Banking Implementation](21-BANKING-IMPLEMENTATION.md) - **Security, compliance, deployment strategies**
-
-## 🚀 Cách Sử Dụng Tài Liệu
-
-### **Học Linh Hoạt Theo Nhu Cầu**
-
-Bạn **không bắt buộc** học theo thứ tự. Tùy theo vai trò và nhu cầu:
-
-**Nếu bạn là Solution Architect:**
-```
-Đọc: 01 → 02 → 03 (Hiểu architecture)
-Sau: 16 (Best practices), 19 (Use cases)
-```
-
-**Nếu bạn là Implementation Consultant:**
-```
-Đọc: 02 → 04 → 07 → 08 (Core implementation)
-Sau: 12 (Alerting), 16 (Best practices)
-```
-
-**Nếu bạn là Technical Sales:**
-```
-Đọc: 01 (Overview), 19 (Use cases)
-Skim: 05, 07, 08 (Demos)
-```
-
-### **Phương Pháp "Hiểu Bản Chất"**
-
-#### 1. **Đọc Sâu, Không Vội**
-```
-❌ Đừng: "Metric có 4 loại là..."
-✅ Hãy: "Tại sao cần 4 loại? Trade-off? Khi nào dùng loại nào?"
-
-❌ Đừng: "Copy-paste config"
-✅ Hãy: "Tại sao config như vậy? Điều chỉnh thế nào cho banking?"
-```
-
-#### 2. **Tư Duy Implementation**
-```
-Mỗi concept, hãy tự hỏi:
-- Làm sao triển khai cho ngân hàng?
-- Yêu cầu security/compliance?
-- Potential issues?
-- Cost implications?
-```
-
-#### 3. **Thực Hành Trên Lab**
-```
-✅ Setup môi trường giống production
-✅ Test các scenarios thực tế
-✅ Document deployment steps
-✅ Practice troubleshooting
-```
-
-## 💡 Tips Học Hiệu Quả
-
-### **Focus Areas**
-
-**✅ Tập trung vào:**
-- Bản chất của concepts (Why, not just How)
-- Banking-specific requirements
-- Security & compliance
-- Production deployment
-- Cost optimization
-- Stakeholder communication
-
-**❌ Không cần chi tiết:**
-- Daily operation tasks
-- Routine maintenance
-- Basic troubleshooting
-- End-user support
-
-## 🛠️ Môi Trường Lab
-
-### **Your Setup: Proxmox Lab**
-
-**Specifications:**
-- 56 Core Xeon
-- 64GB RAM
-- 400GB SSD
-
-**Recommended VM Layout:**
-```
-Banking Simulation Environment:
-
-VM1: Core Banking App (4 core, 8GB)
-  - Java/Spring Boot application
-  - PostgreSQL database
-  - Datadog Agent
-
-VM2: API Layer (4 core, 8GB)
-  - API Gateway
-  - Microservices
-  - Redis cache
-  - Datadog Agent
-
-VM3: Integration (2 core, 4GB)
-  - Message queue
-  - Integration services
-  - Datadog Agent
-
-VM4: Management (2 core, 4GB)
-  - Monitoring tools
-  - Test scripts
-```
-
-**Note:** Tài liệu không hướng dẫn Proxmox setup (bạn tự handle). Focus vào Datadog deployment trên các VMs.
-
-## 🔗 Resources
-
-### **Official Datadog**
-- **Documentation**: https://docs.datadoghq.com/
-- **Enterprise**: https://docs.datadoghq.com/account_management/rbac/
-- **Security**: https://www.datadoghq.com/security/
-- **Compliance**: https://www.datadoghq.com/compliance/
-
-### **Banking-Specific**
-- PCI-DSS compliance với Datadog
-- SOC 2 reports
-- Data residency options
-- Enterprise support
-
-## 📊 Learning Approach
-
-**Không có deadline cứng nhắc** - Học theo tốc độ của bạn:
-- Có thể hoàn thành trong 1-2 tuần (intensive)
-- Hoặc 1-2 tháng (part-time)
-- Hoặc học từng phần khi cần
-
-**Quan trọng:** Hiểu sâu > Học nhanh
+**Sử dụng tài liệu này để:**
+- 📖 **Reference** concepts khi cần
+- 🧠 **Hiểu sâu** bản chất, không chỉ surface
+- 💡 **Decision support** cho architecture
+- ⚠️ **Avoid pitfalls** thường gặp
+- 🏦 **Banking knowledge** đặc thù
 
 ---
 
-**Chúc bạn học tập hiệu quả! 🎉**
+## 🎯 Dành Cho Ai
 
-*Hãy bắt đầu với [Bài 01 - Datadog Là Gì?](01-DATADOG-LA-GI.md)*
+**Primary Audience:**
+```
+✓ Solution Architects      (cần hiểu sâu để thiết kế)
+✓ Technical Consultants    (cần kiến thức để tư vấn)
+✓ DevOps/SRE Engineers     (cần reference khi làm việc)
+✓ Technical Leads          (cần đánh giá solutions)
+✓ Pre-sales Engineers      (cần explain concepts)
+```
 
+**Prerequisites:**
+```
+✓ Đã có kiến thức cơ bản về monitoring
+✓ Hiểu infrastructure & application architecture
+✓ Biết về distributed systems
+✓ Đang hoặc sắp làm việc với Datadog
+```
+
+**Nếu bạn mới bắt đầu:**
+→ Learn basics từ official Datadog courses first
+→ Sau đó quay lại đây để deepen knowledge
+
+---
+
+## 📖 Cấu Trúc Knowledge Base
+
+**Core Concepts** (Nền tảng phải hiểu)
+- [01 - Datadog Overview](01-DATADOG-LA-GI.md) - Value prop, khi nào dùng, trade-offs
+- [02 - Core Concepts Deep Dive](02-KHAI-NIEM-CO-BAN.md) - Metrics, Logs, Traces - bản chất
+- [03 - Architecture & Data Flow](03-KIEN-TRUC-DATADOG.md) - Hệ thống hoạt động như thế nào
+
+**Deployment Knowledge** (Decisions & considerations)
+- [04 - Agent Deployment](04-CAI-DAT-AGENT.md) - Models, considerations, gotchas
+- [05 - Dashboards & Visualization](05-DASHBOARD.md) - Strategies, best practices
+- [06 - Metrics Design](06-METRICS.md) - Types, naming, cardinality
+
+**Advanced Topics** (Deep dive)
+- [07 - APM Deep Dive](07-APM.md) - Tracing concepts, instrumentation
+- [08 - Log Strategy](08-LOG-MANAGEMENT.md) - Collection, parsing, retention
+
+**Enterprise & Banking** (Production considerations)
+- [12 - Alerting Strategy](12-MONITORS-ALERTS.md) - Monitor types, alert fatigue
+- [16 - Best Practices](16-BEST-PRACTICES.md) - Tagging, cost, enterprise
+- [19 - Banking Scenarios](19-USE-CASES.md) - Real-world use cases
+- [21 - Banking Considerations](21-BANKING-IMPLEMENTATION.md) - Security, compliance
+
+**Quick Reference**
+- [20 - Cheat Sheet](20-CHEAT-SHEET.md) - Fast lookups, patterns
+
+---
+
+## 🚀 Cách Sử Dụng
+
+### **Đây Là Reference, Không Phải Course**
+
+**Khi nào dùng:**
+```
+✓ Cần hiểu concepts trước khi implement
+✓ Cần quyết định architecture 
+✓ Gặp vấn đề, cần check pitfalls
+✓ Review kiến thức trước meeting
+✓ Chuẩn bị cho banking projects
+```
+
+**Không dùng để:**
+```
+✗ Học từ đầu (→ dùng official courses)
+✗ Follow tutorial step-by-step (→ không có)
+✗ Copy-paste commands (→ minimal)
+```
+
+### **3 Cách Đọc**
+
+#### **1. Top-Down (Có thời gian)**
+```
+Đọc tuần tự 01 → 03 → 04 → ... → 21
+Xây dựng mental model hoàn chỉnh
+```
+
+#### **2. Just-In-Time (Cần gấp)**
+```
+Nhảy thẳng đến bài cần:
+- Metrics decisions? → 02, 06
+- APM design? → 07  
+- Banking compliance? → 21
+```
+
+#### **3. Problem-Driven (Gặp vấn đề)**
+```
+1. Check Cheat Sheet (20)
+2. Read "Common Pitfalls" section
+3. Deep dive concept nếu cần
+```
+
+---
+
+## 💡 Triết Lý Tài Liệu
+
+### **Depth over Breadth**
+```
+✓ Hiểu sâu concepts quan trọng
+✗ Không cover mọi features
+```
+
+### **Why over How**
+```
+✓ Tại sao thiết kế như vậy
+✓ Trade-offs là gì
+✗ Không chỉ how-to
+```
+
+### **Principles over Procedures**
+```
+✓ Decision frameworks
+✓ Best practices & patterns
+✗ Không phải step-by-step
+```
+
+### **Banking Context**
+```
+✓ Yêu cầu đặc thù ngân hàng
+✓ Real-world scenarios
+✓ Compliance & security
+```
+
+---
+
+## 📚 Kiến Thức Bao Gồm
+
+**Core Observability:**
+- Metrics, Logs, Traces (bản chất & relationships)
+- Data correlation & contextualization
+- Tagging strategies & conventions
+
+**Architecture & Design:**
+- Agent models & deployment patterns
+- Data flow & processing pipeline
+- Security architecture
+- Scalability & HA considerations
+
+**Enterprise Patterns:**
+- RBAC & access control
+- Multi-tenancy designs
+- Compliance & audit
+- Cost optimization
+
+**Banking Domain:**
+- Data sovereignty requirements
+- Regulatory compliance (PCI-DSS, etc.)
+- High availability demands
+- Transaction monitoring patterns
+
+**Common Pitfalls:**
+- High cardinality problems
+- Security misconfigurations
+- Cost overruns
+- Performance issues
+
+---
+
+## 🎯 Success Metrics
+
+**Bạn đã nắm vững khi có thể:**
+```
+□ Explain WHY concepts exist
+□ Choose right approaches for use cases
+□ Design enterprise-ready solutions
+□ Identify & avoid common mistakes
+□ Speak confidently with banking stakeholders
+□ Make informed trade-off decisions
+```
+
+---
+
+## 🏦 Banking Focus
+
+**Tại sao focus banking:**
+- Yêu cầu nghiêm ngặt nhất (security, compliance)
+- High stakes (availability, performance)
+- Complex requirements (data sovereignty, audit)
+- Good reference cho mọi enterprise implementation
+
+**Nếu không làm banking:**
+- Vẫn học được patterns & principles
+- Apply cho domains khác (fintech, healthcare, etc.)
+- Banking = best practices on steroids
+
+---
+
+## 📖 Đọc Gì Trước
+
+**Must Read (Nền tảng):**
+1. [02 - Core Concepts](02-KHAI-NIEM-CO-BAN.md) ⭐ Start here
+2. [03 - Architecture](03-KIEN-TRUC-DATADOG.md)
+3. [21 - Banking Considerations](21-BANKING-IMPLEMENTATION.md) 🏦
+
+**Sau đó:** Jump to topics as needed
+
+---
+
+## 🔗 Bổ Sung
+
+**For tutorials & hands-on:**
+- Datadog Learning Center
+- Official Documentation
+- Training courses
+
+**This knowledge base is for:**
+- Conceptual depth
+- Decision support
+- Quick reference
+- Banking expertise
+
+---
+
+**Bắt đầu:** [02 - Core Concepts Deep Dive](02-KHAI-NIEM-CO-BAN.md) ⭐

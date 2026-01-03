@@ -735,9 +735,9 @@ Monitoring their own system:
 
 ---
 
-## 🎯 Bài Tập
+## 🤔 Kiểm Tra Hiểu Biết
 
-### Exercise 1: Data Flow Tracing
+### Phân tích data flow:
 
 Vẽ data flow cho scenario:
 ```
@@ -752,7 +752,7 @@ Trace qua:
 3. Metrics nào được collect?
 ```
 
-### Exercise 2: Architecture Design
+### Thiết kế architecture:
 
 Thiết kế monitoring cho:
 ```
@@ -768,7 +768,7 @@ Questions:
 3. Estimated data volume?
 ```
 
-### Exercise 3: Security Audit
+### Đánh giá security:
 
 Review security:
 ```

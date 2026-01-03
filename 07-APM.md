@@ -873,9 +873,9 @@ trace.stripe.charge.errors
 
 ---
 
-## 🎯 Bài Tập
+## 🤔 APM Implementation Decisions
 
-### Exercise 1: Setup APM
+### APM setup considerations:
 
 ```
 1. Enable APM in Agent
@@ -888,7 +888,7 @@ trace.stripe.charge.errors
 6. Screenshot of trace flame graph
 ```
 
-### Exercise 2: Custom Spans
+### Custom instrumentation:
 
 ```python
 # Add custom instrumentation
@@ -901,7 +901,7 @@ Requirements:
 5. View in UI with tags and error
 ```
 
-### Exercise 3: Distributed Tracing
+### Distributed tracing design:
 
 ```
 Setup 2 services:
@@ -915,7 +915,7 @@ Setup 2 services:
 5. View complete trace in UI
 ```
 
-### Exercise 4: Performance Analysis
+### Performance analysis framework:
 
 ```
 Given trace showing:
