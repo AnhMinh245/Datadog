@@ -1,117 +1,123 @@
 # 🎓 HỌC DATADOG - TÀI LIỆU TOÀN DIỆN
 
-> Bộ tài liệu học Datadog từ cơ bản đến nâng cao, được thiết kế cho người Việt Nam, với mục tiêu **học một lần là nhớ, học kỹ, học sâu**.
+> Bộ tài liệu học Datadog từ cơ bản đến nâng cao, tập trung vào **triển khai cho ngân hàng và tổ chức tài chính**, với mục tiêu **hiểu bản chất, học kỹ, học sâu**.
 
 ---
 
 ## 📚 Giới Thiệu
 
-Datadog là một nền tảng **Observability** hàng đầu thế giới, giúp bạn:
-- 📊 **Monitor** infrastructure và applications
-- 🔍 **Trace** requests qua distributed systems  
-- 📝 **Collect & analyze** logs tập trung
-- 🚨 **Alert** tự động khi có vấn đề
+Datadog là một nền tảng **Observability** hàng đầu thế giới, được nhiều ngân hàng lớn tin dùng:
+- 📊 **Monitor** infrastructure và applications theo chuẩn enterprise
+- 🔍 **Trace** requests qua distributed systems phức tạp
+- 📝 **Collect & analyze** logs tập trung với compliance
+- 🚨 **Alert** tự động với SLA nghiêm ngặt
 - 📈 **Visualize** toàn bộ hệ thống real-time
+
+**Tại sao ngân hàng chọn Datadog?**
+- ✅ Bảo mật cấp enterprise (SOC 2, ISO 27001, GDPR)
+- ✅ High availability (99.9% SLA)
+- ✅ Compliance & audit trail đầy đủ
+- ✅ Multi-tenancy và role-based access
+- ✅ Tích hợp với legacy systems
 
 ---
 
 ## 🎯 Ai Nên Học?
 
-✅ **DevOps Engineers** - Monitor và maintain infrastructure
-✅ **Backend Developers** - Debug và optimize applications
-✅ **SRE/Platform Engineers** - Ensure reliability và performance
-✅ **System Administrators** - Manage servers và services
-✅ **Tech Leads** - Understand system health và metrics
+✅ **Solution Architects** - Thiết kế giải pháp monitoring cho khách hàng ngân hàng
+✅ **Implementation Consultants** - Triển khai Datadog cho enterprise
+✅ **DevOps/SRE Engineers** - Deploy và configure cho banking systems
+✅ **Technical Sales** - Hiểu sâu sản phẩm để tư vấn khách hàng
+✅ **Technical Leads** - Đánh giá và lựa chọn observability platform
 
 ---
 
 ## 🗺️ Cấu Trúc Khóa Học
 
-### **📖 PHẦN 1: NỀN TẢNG (2-3 ngày)**
+### **📖 PHẦN 1: NỀN TẢNG** 
 
-| Bài | Tên | Nội Dung | Độ Khó |
-|-----|-----|----------|---------|
-| **[00](00-INTRODUCTION.md)** | **Introduction** | Tổng quan khóa học, cách học | ⭐ |
-| **[01](01-DATADOG-LA-GI.md)** | **Datadog Là Gì?** | Giới thiệu, use cases, so sánh tools | ⭐ |
-| **[02](02-KHAI-NIEM-CO-BAN.md)** | **Khái Niệm Cơ Bản** | Metrics, Logs, Traces, Tags | ⭐⭐ |
-| **[03](03-KIEN-TRUC-DATADOG.md)** | **Kiến Trúc** | Agent, Backend, Data flow | ⭐⭐ |
-| **[04](04-CAI-DAT-AGENT.md)** | **Cài Đặt Agent** | Linux, Windows, Docker, K8s | ⭐⭐ |
+| Bài | Tên | Nội Dung | Focus |
+|-----|-----|----------|-------|
+| **[00](00-INTRODUCTION.md)** | **Introduction** | Tổng quan, phương pháp học | Implementation |
+| **[01](01-DATADOG-LA-GI.md)** | **Datadog Là Gì?** | Giới thiệu, enterprise features, banking use cases | Architecture |
+| **[02](02-KHAI-NIEM-CO-BAN.md)** | **Khái Niệm Cơ Bản** | Metrics, Logs, Traces - Hiểu bản chất | Deep Dive |
+| **[03](03-KIEN-TRUC-DATADOG.md)** | **Kiến Trúc** | Agent, Backend, Security architecture | Enterprise |
+| **[04](04-CAI-DAT-AGENT.md)** | **Triển Khai Agent** | Deployment strategies cho banking | Production |
 
-### **🎨 PHẦN 2: VISUALIZATION (2-3 ngày)**
+### **🎨 PHẦN 2: IMPLEMENTATION**
 
-| Bài | Tên | Nội Dung | Độ Khó |
-|-----|-----|----------|---------|
-| **[05](05-DASHBOARD.md)** | **Dashboard** | Widgets, queries, visualization | ⭐⭐ |
-| **[06](06-METRICS.md)** | **Metrics** | Custom metrics, patterns, cost | ⭐⭐⭐ |
+| Bài | Tên | Nội Dung | Focus |
+|-----|-----|----------|-------|
+| **[05](05-DASHBOARD.md)** | **Dashboard Enterprise** | Executive dashboards, compliance reporting | Banking |
+| **[06](06-METRICS.md)** | **Metrics Strategy** | Business metrics, SLA tracking | Implementation |
 
-### **🔍 PHẦN 3: OBSERVABILITY (3-4 ngày)**
+### **🔍 PHẦN 3: BANKING OBSERVABILITY**
 
-| Bài | Tên | Nội Dung | Độ Khó |
-|-----|-----|----------|---------|
-| **[07](07-APM.md)** | **APM** | Distributed tracing, performance | ⭐⭐⭐ |
-| **[08](08-LOG-MANAGEMENT.md)** | **Log Management** | Collection, parsing, search | ⭐⭐⭐ |
+| Bài | Tên | Nội Dung | Focus |
+|-----|-----|----------|-------|
+| **[07](07-APM.md)** | **APM cho Banking** | Transaction tracing, performance critical paths | Banking |
+| **[08](08-LOG-MANAGEMENT.md)** | **Log Management** | Compliance, audit trails, retention | Security |
 
-### **🚨 PHẦN 4: ALERTING (2-3 ngày)**
+### **🚨 PHẦN 4: PRODUCTION READINESS**
 
-| Bài | Tên | Nội Dung | Độ Khó |
-|-----|-----|----------|---------|
-| **[12](12-MONITORS-ALERTS.md)** | **Monitors & Alerts** | Alert types, notifications, best practices | ⭐⭐⭐ |
+| Bài | Tên | Nội Dung | Focus |
+|-----|-----|----------|-------|
+| **[12](12-MONITORS-ALERTS.md)** | **Enterprise Alerting** | SLA monitoring, escalation policies | Critical |
+| **[16](16-BEST-PRACTICES.md)** | **Banking Best Practices** | Security, compliance, cost optimization | Enterprise |
 
-### **⚡ PHẦN 5: MASTERY (1-2 tuần)**
+### **📚 PHẦN 5: REFERENCE**
 
-| Bài | Tên | Nội Dung | Độ Khó |
-|-----|-----|----------|---------|
-| **[16](16-BEST-PRACTICES.md)** | **Best Practices** | Tagging, cost optimization, strategy | ⭐⭐⭐⭐ |
-| **[20](20-CHEAT-SHEET.md)** | **Cheat Sheet** | Quick reference, commands, tips | ⭐ |
+| Bài | Tên | Nội Dung | Focus |
+|-----|-----|----------|-------|
+| **[19](19-USE-CASES.md)** | **Banking Use Cases** | Retail banking, core banking, payment systems | Real-world |
+| **[20](20-CHEAT-SHEET.md)** | **Deployment Checklist** | Quick reference cho implementation | Practical |
+| **[21](21-BANKING-IMPLEMENTATION.md)** | **🏦 Banking Implementation Guide** | Security, compliance, deployment cho ngân hàng | **Critical** |
 
 ---
 
-## 🚀 Cách Sử Dụng Khóa Học
+## 🚀 Phương Pháp Học
 
-### **Lộ Trình Học Đề Xuất**
+### **Học Theo Nhu Cầu (Flexible Learning)**
 
+Tài liệu này được thiết kế để bạn có thể:
+- ✅ Học theo tốc độ riêng của mình
+- ✅ Nhảy đến bài cần thiết nhất
+- ✅ Quay lại ôn tập bất cứ lúc nào
+- ✅ Tập trung vào khía cạnh implementation
+
+### **Phương Pháp "Hiểu Bản Chất"**
+
+#### 1️⃣ **Đọc Sâu - Không Vội (40%)**
 ```
-TUẦN 1: Foundation
-├─ Ngày 1-2: Bài 01-03 (Hiểu Datadog là gì, khái niệm)
-├─ Ngày 3-4: Bài 04 (Cài đặt và configure Agent)
-├─ Ngày 5-6: Bài 05-06 (Dashboard và Metrics)
-└─ Ngày 7: Ôn tập, thực hành
-
-TUẦN 2: Observability
-├─ Ngày 8-10: Bài 07 (APM - Application Performance)
-├─ Ngày 11-13: Bài 08 (Log Management)
-└─ Ngày 14: Tích hợp và thực hành
-
-TUẦN 3: Advanced
-├─ Ngày 15-17: Bài 12 (Monitors & Alerts)
-├─ Ngày 18-20: Bài 16 (Best Practices)
-└─ Ngày 21: Review và project cuối khóa
+✅ Hiểu TẠI SAO, không chỉ LÀM THẾ NÀO
+✅ Nắm bản chất của từng concept
+✅ Hiểu trade-offs và design decisions
+✅ Đặt câu hỏi "Tại sao lại thiết kế như vậy?"
 ```
 
-### **Phương Pháp Học Hiệu Quả**
+**Ví dụ:**
+- Không chỉ học "Metric có 4 loại"
+- Mà hiểu "Tại sao cần 4 loại? Khi nào dùng loại nào? Trade-off là gì?"
 
-#### 1️⃣ **Đọc & Hiểu (30%)**
+#### 2️⃣ **Thực Hành Implementation (40%)**
 ```
-✅ Đọc kỹ từng bài
-✅ Highlight các khái niệm quan trọng
-✅ Note lại câu hỏi
-✅ Không vội vàng
-```
-
-#### 2️⃣ **Thực Hành (50%)**
-```
-✅ Làm theo từng ví dụ
-✅ Hoàn thành bài tập cuối mỗi bài
-✅ Tạo tài khoản Datadog trial (14 ngày free)
-✅ Thử nghiệm trên môi trường thật
+✅ Deploy trên lab environment thật
+✅ Test các scenarios banking
+✅ Troubleshoot các vấn đề phát sinh
+✅ Document quá trình triển khai
 ```
 
-#### 3️⃣ **Ôn Tập & Củng Cố (20%)**
+**Focus:**
+- Không phải vận hành hàng ngày
+- Mà là **triển khai ban đầu** cho khách hàng
+- Các best practices cho production
+
+#### 3️⃣ **Tư Duy Architect (20%)**
 ```
-✅ Review Cheat Sheet (Bài 20)
-✅ Làm lại exercises
-✅ Tạo project mini
-✅ Chia sẻ kiến thức với team
+✅ Thiết kế solution cho banking use cases
+✅ Đánh giá yêu cầu compliance
+✅ Tính toán cost và resource
+✅ Planning cho scale
 ```
 
 ---
@@ -153,36 +159,58 @@ Tốt Nếu Có:
 ⭐ Monitoring basics
 ```
 
-### **Môi Trường Thực Hành**
+### **Môi Trường Lab**
 
-**Option 1: Local VM (Khuyến nghị cho beginners)**
+**Your Lab Environment:**
 ```
-- VirtualBox/VMware với Ubuntu 20.04+
-- 2GB RAM, 2 CPU cores
-- Cài Docker (optional)
-```
-
-**Option 2: Cloud VM**
-```
-- AWS EC2 t2.micro (Free tier)
-- Google Cloud Compute Engine
-- Azure VM
-```
-
-**Option 3: Docker Desktop**
-```
-- Docker Desktop (Windows/Mac)
-- Chạy containers để test
-- Không cần VM riêng
+✅ Proxmox Hypervisor
+   - 56 Core Xeon
+   - 64GB RAM  
+   - 400GB SSD
+   
+✅ Khả năng tạo multiple VMs:
+   - Simulate multi-tier banking application
+   - Test distributed monitoring
+   - Practice high-availability setup
+   - Deploy production-like environment
 ```
 
-### **Tài Khoản Datadog**
+**Suggested Lab Architecture:**
 ```
-1. Đăng ký: https://www.datadoghq.com/
-2. Chọn trial 14 ngày (FREE)
-3. Không cần credit card
-4. Full features để học
+VM1: Core Banking Simulator (4 core, 8GB RAM)
+  - Application servers
+  - Database (PostgreSQL)
+  - Datadog Agent
+
+VM2: API Gateway & Services (4 core, 8GB RAM)
+  - API Gateway
+  - Microservices
+  - Redis cache
+  - Datadog Agent
+
+VM3: Integration Layer (2 core, 4GB RAM)
+  - Message queue (RabbitMQ/Kafka)
+  - Integration services
+  - Datadog Agent
+
+VM4: Monitoring & Tools (2 core, 4GB RAM)
+  - Jump server
+  - Testing tools
+  - Log generators
 ```
+
+**Tài Khoản Datadog:**
+```
+1. Đăng ký trial: https://www.datadoghq.com/
+2. Chọn plan: Enterprise trial (14 ngày)
+3. Yêu cầu enterprise features:
+   - SAML/SSO
+   - RBAC
+   - Compliance features
+   - Extended retention
+```
+
+**Note:** Tài liệu tập trung vào việc configure và deploy, không hướng dẫn chi tiết Proxmox (bạn tự handle được).
 
 ---
 
@@ -205,46 +233,81 @@ Tốt Nếu Có:
 
 ---
 
-## 🎯 Projects Thực Hành
+## 🏦 Banking Implementation Projects
 
-### **Project 1: Basic Monitoring (Week 1)**
+### **Project 1: Core Banking Monitoring**
 ```
-Setup:
-- 1 web server (nginx)
-- 1 database (postgresql)
+Scenario: Triển khai monitoring cho core banking system
 
-Tasks:
-✅ Install Agent trên cả 2 servers
-✅ Collect system metrics
-✅ Create dashboard với 10 widgets
-✅ Setup 3 monitors (CPU, Memory, Disk)
-```
+Architecture:
+- Application tier (Java/Spring Boot)
+- Database tier (Oracle/PostgreSQL)
+- Integration layer (ESB)
 
-### **Project 2: Application Monitoring (Week 2)**
-```
-Setup:
-- Simple API (Flask/Express)
-- Connected to database
+Implementation Tasks:
+✅ Deploy Agents với security hardening
+✅ Configure APM cho transaction tracing
+✅ Setup log collection với compliance
+✅ Create executive dashboard (uptime, TPS, latency)
+✅ Implement SLA monitoring (99.9% target)
+✅ Setup audit logging
+✅ Document deployment procedures
 
-Tasks:
-✅ Instrument với APM
-✅ Send custom metrics
-✅ Collect và parse logs
-✅ Correlate logs ↔ traces
-✅ Create APM dashboard
+Banking-specific:
+✅ Track transaction success rate
+✅ Monitor account balance queries latency
+✅ Alert on failed fund transfers
+✅ Compliance reporting dashboard
 ```
 
-### **Project 3: E-commerce Monitoring (Week 3)**
+### **Project 2: API Banking Platform**
 ```
-Scenario: Online store
+Scenario: Modern API banking cho corporate clients
 
-Tasks:
-✅ Monitor full stack (web, api, db)
-✅ Track business metrics (orders, revenue)
-✅ Setup alerts cho critical paths
-✅ Create executive dashboard
-✅ Implement SLOs
-✅ Cost optimization
+Architecture:
+- API Gateway (Kong/Apigee)
+- Microservices (Node.js/Go)
+- Payment processing
+- Real-time notifications
+
+Implementation Tasks:
+✅ Distributed tracing qua microservices
+✅ API performance monitoring (p95, p99)
+✅ Rate limiting và throttling metrics
+✅ Security monitoring (failed auth, suspicious activity)
+✅ Business metrics (API usage by client tier)
+✅ SLO setup (API availability, latency)
+✅ Cost allocation by tenant
+
+Banking-specific:
+✅ Payment processing end-to-end tracing
+✅ Fraud detection metrics
+✅ Regulatory reporting dashboard
+```
+
+### **Project 3: Mobile Banking Backend**
+```
+Scenario: High-traffic mobile banking platform
+
+Architecture:
+- Mobile API (REST/GraphQL)
+- Push notification service
+- Session management (Redis)
+- Real-time balance updates
+
+Implementation Tasks:
+✅ High-scale monitoring (millions requests/day)
+✅ Mobile-specific metrics (app version, OS, device)
+✅ Real User Monitoring integration
+✅ Performance optimization based on data
+✅ Geographic performance analysis
+✅ Capacity planning dashboards
+
+Banking-specific:
+✅ Login success rate by authentication method
+✅ Transaction completion rate mobile vs web
+✅ Session management monitoring
+✅ Push notification delivery tracking
 ```
 
 ---
@@ -360,28 +423,52 @@ Sau khi hoàn thành khóa học này, bạn có thể:
 
 ---
 
-## 📅 Lịch Học Đề Xuất
+## 🎯 Implementation Focus Areas
 
-### **Full-time (3 tuần)**
+### **Kiến Thức Implementation (Không phải Operation)**
+
+**✅ Focus ON:**
 ```
-- 4-6 giờ/ngày
-- Hoàn thành sau 3 tuần
-- Phù hợp: Career switch, intensive learning
+Deployment & Setup
+├─ Initial architecture design
+├─ Agent deployment strategies
+├─ Integration configuration
+├─ Dashboard creation for stakeholders
+├─ Alert strategy definition
+├─ Security & compliance setup
+├─ Documentation & handover
+└─ Training end users
 ```
 
-### **Part-time (2 tháng)**
+**❌ Focus OFF:**
 ```
-- 1-2 giờ/ngày
-- Hoàn thành sau 8 tuần
-- Phù hợp: Đang làm việc full-time
+Daily Operations (Không cover chi tiết):
+├─ Day-to-day incident response
+├─ On-call procedures
+├─ Routine maintenance tasks
+└─ Operational troubleshooting
 ```
 
-### **Weekend (3 tháng)**
-```
-- Chỉ cuối tuần
-- 4-6 giờ/tuần
-- Phù hợp: Busy schedule
-```
+### **Banking-Specific Considerations**
+
+**Security & Compliance:**
+- Data sovereignty & regional requirements
+- PCI-DSS compliance
+- Audit trail requirements  
+- Access control (RBAC, SSO)
+- Data masking & encryption
+
+**Performance Requirements:**
+- High availability (99.9%+)
+- Low latency (< 100ms for critical transactions)
+- High throughput (thousands TPS)
+- Disaster recovery
+
+**Cost Management:**
+- Enterprise pricing model
+- Multi-tenancy setup
+- Resource allocation
+- Budget planning
 
 ---
 
