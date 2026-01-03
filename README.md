@@ -76,6 +76,7 @@
 | Bài | Nội Dung | Must Know |
 |-----|----------|-----------|
 | **[12](12-MONITORS-ALERTS.md)** | **Alerting Strategy** | Monitor types, thresholds, alert fatigue prevention |
+| **[13](13-SLO.md)** | **Service Level Objectives** | SLI/SLO/SLA concepts, error budget, banking SLO patterns |
 | **[16](16-BEST-PRACTICES.md)** | **Best Practices** | Tagging, cost optimization, enterprise patterns |
 
 ### **🏦 BANKING CONTEXT** (Domain-Specific)
@@ -85,11 +86,12 @@
 | **[19](19-USE-CASES.md)** | **Banking Scenarios** | Real-world use cases, requirements, solutions |
 | **[21](21-BANKING-IMPLEMENTATION.md)** | **Banking Considerations** | Security, compliance, what to watch out for |
 
-### **📚 QUICK REFERENCE**
+### **📚 QUICK REFERENCE & FRAMEWORKS**
 
 | Bài | Nội Dung | Usage |
 |-----|----------|-------|
 | **[20](20-CHEAT-SHEET.md)** | **Quick Reference** | Fast lookups, common patterns, decision trees |
+| **[22](22-DECISION-FRAMEWORKS.md)** | **Decision Frameworks** | Build vs Buy, metric selection, tagging, deployment models |
 
 ---
 
@@ -127,6 +129,8 @@ Nhảy thẳng đến bài liên quan:
 - Design dashboard? → 05
 - APM decisions? → 07
 - Banking compliance? → 21
+- SLO setup? → 13
+- Decision framework? → 22
 - Quick lookup? → 20
 ```
 

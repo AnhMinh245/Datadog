@@ -1,923 +1,1173 @@
-# 05 - DASHBOARD VÀ VISUALIZATION
+# 05 - DASHBOARD STRATEGY & DESIGN
 
-## 🎯 Mục Tiêu Bài Học
-Sau bài học này, bạn sẽ:
-- Hiểu các loại dashboard và widgets
-- Tạo dashboard tùy chỉnh
-- Viết queries hiệu quả
-- Chia sẻ và export dashboards
-- Apply best practices
+## 🎯 Mục Tiêu
+Hiểu dashboard design principles, widget selection, query optimization và best practices để tạo dashboards hiệu quả cho stakeholders và teams.
 
 ---
 
-## 📊 Dashboard Types
+## 📚 Bản Chất: Dashboards Là Gì?
 
-### 1. Timeboard
-> Dashboard với timeline đồng bộ cho tất cả widgets
+### **Purpose của Dashboards**
 
-**Đặc điểm:**
 ```
-✅ Shared time frame across all widgets
-✅ Zoom và pan timeline
-✅ Tốt cho troubleshooting
-✅ Compare multiple metrics trong cùng timeframe
-✅ Template variables
-```
+Dashboard ≠ Dump all metrics
+Dashboard = Tell a story with data
 
-**Use cases:**
-```
-- Incident investigation
-- Performance analysis
-- System correlation
-- Root cause analysis
-```
+3 loại stories:
 
-### 2. Screenboard
-> Dashboard với layout tự do và flexible timing
-
-**Đặc điểm:**
-```
-✅ Mỗi widget có independent timeframe
-✅ Drag-and-drop layout
-✅ Widgets có thể resize
-✅ Tốt cho high-level overview
-✅ Embedded content (iframe, images)
+1. Operational Story
+   "Is the system healthy RIGHT NOW?"
+   → For: On-call engineers
+   → Real-time status, quick triage
+   
+2. Analytical Story
+   "WHY did this happen?"
+   → For: Performance engineers
+   → Deep dive, correlation, trends
+   
+3. Business Story
+   "What's the IMPACT?"
+   → For: Executives, product managers
+   → High-level KPIs, SLOs, business metrics
 ```
 
-**Use cases:**
+**Common Mistake:**
 ```
-- Executive dashboards
-- Status boards
-- Team overviews
-- Public displays
+❌ One dashboard for everyone
+   → Too complex for execs
+   → Not detailed enough for engineers
+   
+✅ Purpose-built dashboards
+   → Executive dashboard (10 widgets, high-level)
+   → Engineering dashboard (50 widgets, detailed)
+   → On-call dashboard (20 widgets, actionable)
 ```
-
-### So Sánh
-
-| Feature | Timeboard | Screenboard |
-|---------|-----------|-------------|
-| **Time synchronization** | Global | Per widget |
-| **Layout** | Grid-based | Free-form |
-| **Troubleshooting** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **Presentation** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **Template variables** | Yes | Yes |
-| **Auto-refresh** | Yes | Yes |
 
 ---
 
-## 🧩 Widget Types
+## 🎨 Dashboard Types: When to Use What
 
-### 1. **Timeseries**
-> Line/Area/Bar chart theo thời gian
+### **Type 1: Timeboard**
+
+**Definition:**
+> Shared timeline across all widgets - zoom/pan affects everything
 
 ```
-Use cases:
-- CPU usage over time
-- Request rate trends
-- Memory consumption
-- Response time evolution
+┌─────────────────────────────────────────────┐
+│ [====== Shared Timeline: Last 4 Hours =====]│
+├─────────────────────────────────────────────┤
+│  CPU Usage          │  Memory Usage        │
+│  [graph synced]     │  [graph synced]      │
+├─────────────────────────────────────────────┤
+│  Request Rate       │  Error Rate          │
+│  [graph synced]     │  [graph synced]      │
+└─────────────────────────────────────────────┘
 ```
 
-**Example Query:**
+**When to Use:**
 ```
-avg:system.cpu.user{env:production} by {host}
+✅ Troubleshooting / Investigation
+✅ Correlation analysis
+✅ Incident response
+✅ Performance debugging
+
+Example: "Response time spiked at 10 AM"
+→ Timeboard shows CPU, memory, requests at 10 AM across all widgets
+→ Easy to correlate
 ```
+
+**Pros:**
+- ✅ Zoom timeline → all widgets adjust
+- ✅ See correlations easily
+- ✅ Great for "what happened when"
+
+**Cons:**
+- ⚠️ All widgets must use same timeframe
+- ⚠️ Not flexible for mixed use cases
+
+---
+
+### **Type 2: Screenboard**
+
+**Definition:**
+> Independent timeline per widget - flexible layout
+
+```
+┌─────────────────────────────────────────────┐
+│  Total Users (Last 24h)  │  SLO (Last 30d) │
+│  [independent time]      │  [independent]  │
+├─────────────────────────────────────────────┤
+│  Recent Deployments           │  Text Note │
+│  (Last 7 days)                │            │
+└─────────────────────────────────────────────┘
+```
+
+**When to Use:**
+```
+✅ Executive dashboards
+✅ Status boards / NOC displays
+✅ Mixed timeframes needed
+✅ Public dashboards
+
+Example: Executive Dashboard
+→ SLO widget: Last 30 days
+→ Revenue widget: Last 24 hours
+→ Deploy widget: Last 7 days
+→ Different timeframes make sense
+```
+
+**Pros:**
+- ✅ Flexible layout (drag-and-drop)
+- ✅ Each widget independent
+- ✅ Can embed images, text, iframes
+
+**Cons:**
+- ⚠️ No shared timeline (harder to correlate)
+
+---
+
+### **Decision Framework:**
+
+```
+Need to correlate events?
+├─ YES → Timeboard
+│   Examples:
+│   - Troubleshooting dashboard
+│   - Performance analysis
+│   - Incident investigation
+│
+└─ NO → Screenboard
+    Examples:
+    - Executive overview
+    - Team status board
+    - Mixed metrics (different timeframes)
+```
+
+---
+
+## 🧩 Widget Selection Guide
+
+### **Decision Tree: Which Widget?**
+
+```
+What are you showing?
+
+├─ Single number (current value)
+│  └─ Use: Query Value
+│     Examples: Current CPU %, Active users, Error count
+│
+├─ Change over time
+│  └─ Use: Timeseries
+│     Examples: Request rate, Response time trend, Memory usage
+│
+├─ Ranking (top/bottom N)
+│  └─ Use: Top List
+│     Examples: Top hosts by CPU, Slowest endpoints, Most errors
+│
+├─ Distribution of values
+│  ├─ Histogram → Use: Distribution
+│  │  Examples: Latency percentiles (p50/p95/p99)
+│  │
+│  └─ Heatmap → Use: Heatmap
+│     Examples: Request duration across services, Error patterns
+│
+├─ Real-time events
+│  └─ Use: Log Stream
+│     Examples: Live errors, Deployment logs, Audit trail
+│
+├─ Infrastructure overview
+│  └─ Use: Host Map
+│     Examples: Fleet health, Resource utilization across hosts
+│
+├─ Service relationships
+│  └─ Use: Service Map
+│     Examples: Microservice dependencies, Data flow
+│
+└─ Multiple metrics comparison
+   └─ Use: Table
+      Examples: Host comparison (CPU, RAM, Disk), Service comparison
+```
+
+---
+
+### **Widget Deep Dive**
+
+#### **Query Value - Single Number**
+
+**Purpose:** Show current state or aggregate value
+
+**Use Cases:**
+```
+✅ Current CPU usage: 67.5%
+✅ Total requests today: 1.2M
+✅ Active users: 850
+✅ Error rate: 0.3%
+```
+
+**Design Considerations:**
+```yaml
+Conditional Formatting (Critical):
+  < 50%: Green (good)
+  50-80%: Yellow (warning)
+  > 80%: Red (critical)
+  
+Unit Selection:
+  - Percentage: %
+  - Duration: ms, s
+  - Throughput: /s, /min
+  - Count: format with commas (1,234,567)
+
+Font Size:
+  - Large for dashboards on TVs
+  - Smaller for dense dashboards
+```
+
+**Common Mistake:**
+```
+❌ Query Value for trend data
+   Example: response_time query value = 250ms
+   → Missing: Is it getting better or worse?
+   
+✅ Use Query Value + Timeseries
+   → Value shows current: 250ms
+   → Timeseries shows trend: increasing!
+```
+
+---
+
+#### **Timeseries - Line/Area/Bar Chart**
+
+**Purpose:** Show changes over time
 
 **Visualization Options:**
 ```
-- Line (default)
-- Area
-- Bars
-- Display: lines, bands, both
-- Interpolation: linear, step, cardinal
+Lines:
+  ✅ Multiple series comparison
+  ✅ Sparse data
+  Example: Compare CPU across 5 hosts
+
+Area:
+  ✅ Show cumulative effect
+  ✅ Emphasize magnitude
+  Example: Total requests (stacked by service)
+
+Bars:
+  ✅ Discrete events
+  ✅ Clear separation
+  Example: Deployments per day, Errors per hour
 ```
 
-### 2. **Query Value**
-> Single number - Latest value or calculation
-
-```
-Use cases:
-- Current CPU %
-- Total requests today
-- Active users count
-- Error rate
-```
-
-**Example:**
-```
-Query: avg:system.cpu.user{host:web-01}
-Result: 67.5%
-
-With conditional formatting:
-< 50%  → Green
-50-80% → Yellow
-> 80%  → Red
+**Display Modes:**
+```yaml
+Lines:
+  - Interpolation: linear, step, cardinal
+  - Line width: thin (multiple series), thick (single series)
+  
+Bands (with lines):
+  - Show bounds/uncertainty
+  - Example: Anomaly detection bounds
+  
+Both:
+  - Combination for clarity
 ```
 
-### 3. **Top List**
-> Ranking list - Top N items
-
+**Y-Axis Decisions:**
 ```
-Use cases:
-- Top 10 hosts by CPU
-- Most requested endpoints
-- Largest tables
-- Busiest services
-```
-
-**Example:**
-```
-Query: avg:system.cpu.user{*} by {host}
-Display: Top 10 hosts
-Order: Descending
+Auto-scale (default):
+  ✅ Good for exploration
+  ⚠️ Can be misleading (exaggerates changes)
+  
+Fixed scale:
+  ✅ Consistent interpretation
+  ✅ Compare across dashboards
+  Example: CPU always 0-100%, not auto-scale 60-80%
+  
+Log scale:
+  ✅ When range varies greatly
+  Example: Error counts (1 to 10,000)
 ```
 
-### 4. **Heatmap**
-> Color-coded grid showing distribution
+---
 
-```
-Use cases:
-- Response time distribution
-- Error patterns across hosts
-- Request volume by hour/day
-- Latency percentiles
-```
+#### **Top List - Rankings**
 
-**Example:**
-```
-Query: avg:trace.http.request.duration{*} by {service}
-Shows: How response times distributed across services
-```
+**Purpose:** Show top/bottom N items
 
-### 5. **Distribution**
-> Histogram or percentile distribution
-
+**Use Cases:**
 ```
-Use cases:
-- Latency percentiles (p50, p95, p99)
-- Request size distribution
-- Query duration spread
-```
-
-**Example:**
-```
-Query: p95:trace.http.request.duration{service:api}
-Shows: 95th percentile response time
-```
-
-### 6. **Log Stream**
-> Real-time log flow
-
-```
-Use cases:
-- Live error monitoring
-- Deployment watching
-- Real-time debugging
+✅ Top 10 hosts by CPU
+✅ Slowest 5 endpoints
+✅ Most active users (careful: cardinality!)
+✅ Largest database tables
 ```
 
 **Configuration:**
-```
-Query: source:python status:error
-Columns: timestamp, service, message
-Limit: Last 50 logs
-```
-
-### 7. **Host Map**
-> Visual grid of hosts colored by metric
-
-```
-Use cases:
-- Infrastructure overview
-- Quick health check
-- Anomaly spotting
+```yaml
+Order:
+  Descending: Top N highest
+  Ascending: Bottom N (lowest)
+  
+Limit:
+  Default: 10
+  Consideration: More = harder to read
+  
+Conditional Format:
+  Highlight top 1 in red (if bad metric)
+  Highlight top 1 in green (if good metric)
 ```
 
-**Example:**
+**Gotcha:**
 ```
-Metric: avg:system.cpu.user{*} by {host}
-Color: Green (low) → Red (high)
-Group by: availability-zone
-```
-
-### 8. **Service Map**
-> Dependency graph for services
-
-```
-Use cases:
-- Microservices topology
-- Service dependencies
-- Performance bottlenecks
-```
-
-**Auto-generated from:**
-```
-APM traces
-Service-to-service calls
-Shows: Request volume, latency, error rate
-```
-
-### 9. **Table**
-> Tabular data with multiple columns
-
-```
-Use cases:
-- Multi-metric comparison
-- Detailed host information
-- Resource inventory
-```
-
-**Example:**
-```
-Rows: Hosts
-Columns:
-  - CPU avg
-  - Memory avg
-  - Disk usage
-  - Network in/out
-```
-
-### 10. **SLO Widget**
-> Service Level Objective status
-
-```
-Shows:
-- SLO target: 99.9%
-- Current: 99.95%
-- Error budget remaining
-- Time period
+❌ Top list by high-cardinality tag
+   Example: Top 100 users by requests
+   → Creates 100 custom metrics
+   → Expensive!
+   
+✅ Top list by low-cardinality tag
+   Example: Top 10 services by requests
+   → Max 10 metrics
 ```
 
 ---
 
-## 🔍 Query Language
+#### **Heatmap - Pattern Visualization**
 
-### Query Syntax
+**Purpose:** Show distribution across dimensions
 
-**Basic Format:**
+**Use Cases:**
 ```
-<aggregation>:<metric>{<filters>} [by {<tags>}]
-```
-
-**Components:**
-
-#### 1. Aggregation
-```
-avg   - Average value
-sum   - Sum all values
-min   - Minimum value
-max   - Maximum value
-count - Count of points
+✅ Response time distribution across services
+✅ Error patterns by hour of day
+✅ Request volume by region and time
 ```
 
-**Examples:**
+**When to Use:**
 ```
-avg:system.cpu.user{*}
-sum:http.requests{*}
-max:database.connections{*}
-```
-
-#### 2. Metric Name
-```
-Format: <namespace>.<name>
-Examples:
-  system.cpu.user
-  http.requests
-  database.query.time
-  custom.business.metric
+✅ When you have 2 dimensions
+   Example: Service (X) × Time (Y)
+   
+✅ When you want to see patterns
+   Example: "Service A always slow at midnight"
+   
+✅ When exact numbers less important than trends
 ```
 
-#### 3. Filters (Tags)
+**Color Schemes:**
 ```
-{tag_key:tag_value}
-{tag1:value1,tag2:value2}  # AND logic
-{tag:value1 OR tag:value2}  # OR logic
+Sequential (default):
+  - Light → Dark (low → high)
+  - Good for most use cases
+  
+Diverging:
+  - Blue ← Neutral → Red
+  - Good for deltas (negative/positive)
 ```
 
-**Examples:**
+---
+
+## 🔍 Query Language Mastery
+
+### **Query Anatomy**
+
 ```
+<aggregation>:<metric>{<filters>} [by {<tags>}] [functions]
+     ▲           ▲         ▲            ▲           ▲
+     │           │         │            │           │
+   What to   Which    Which       Group by     Transform
+     do      metric   subset       what
+```
+
+### **Aggregations: What To Do**
+
+```
+avg:   Average (most common)
+sum:   Total (for counts, requests)
+min:   Minimum value
+max:   Maximum value (peak)
+count: Number of data points
+```
+
+**When to use:**
+```yaml
+avg:
+  - CPU usage (average across time)
+  - Response time (mean)
+  - Memory usage
+  
+sum:
+  - Request counts (total requests)
+  - Error counts (total errors)
+  - Bytes transferred (total bandwidth)
+  
+max:
+  - Peak CPU (worst case)
+  - Max response time (slowest request)
+  - Highest queue depth
+  
+min:
+  - Available disk space (lowest point)
+  - Minimum connections (baseline)
+```
+
+---
+
+### **Filters: Which Subset**
+
+```bash
+# Single tag
 {env:production}
+
+# Multiple tags (AND)
 {env:production,service:api}
-{host:web-01 OR host:web-02}
-{env:production,service:api OR service:worker}
+
+# OR logic
+{env:production OR env:staging}
+{service:api OR service:worker}
+
+# Wildcards
+{service:web-*}
+{host:prod-db-*}
+
+# NOT
+{env:production,-service:test}
 ```
 
-#### 4. Group By
-```
-by {tag_key}
-by {tag1,tag2}
+**Best Practice:**
+```yaml
+Specific is better:
+❌ {*}  # All data → expensive, slow
+✅ {env:production,service:payment-api}  # Precise
+
+Use template variables:
+❌ Hardcoded: {env:production}
+✅ Dynamic: {env:$env}
+   → Users can switch env via dropdown
 ```
 
-**Examples:**
-```
+---
+
+### **Group By: Split Data**
+
+```bash
+# Single dimension
 avg:system.cpu.user{*} by {host}
+→ One line per host
+
+# Multiple dimensions
 sum:http.requests{*} by {service,status_code}
+→ One line per service+status combo
 ```
 
-### Advanced Queries
-
-#### Arithmetic
+**Cardinality Warning:**
 ```
-# CPU average across all cores
-avg:system.cpu.user{*} + avg:system.cpu.system{*}
+Group by creates: N × M series
 
-# Free memory percentage
-(avg:system.mem.total{*} - avg:system.mem.used{*}) / avg:system.mem.total{*} * 100
+Example:
+- 10 services
+- 5 status codes (200, 400, 404, 500, 503)
+= 50 series in one graph
 
-# Request rate per second
-sum:http.requests{*}.as_count() / 60
+Too many series → unreadable graph
+Limit: Keep under 20-30 series per graph
 ```
 
-#### Functions
+---
 
-**Rate:**
-```
-# Convert count to rate
+### **Functions: Transform Data**
+
+#### **as_rate() / as_count()**
+
+```bash
+# Convert count to rate (per second)
 sum:http.requests{*}.as_rate()
+→ Requests per second
 
-# Result: requests per second
+# Convert rate to count
+sum:http.requests{*}.as_count()
+→ Total requests in timeframe
 ```
 
-**Rollup:**
+**When to use:**
 ```
-# Custom time aggregation
+as_rate():
+  ✅ Counts that accumulate (requests, errors)
+  ✅ Want per-second rate for comparison
+  
+as_count():
+  ✅ See total over period
+  Example: Total errors in last hour
+```
+
+---
+
+#### **rollup() - Time Aggregation**
+
+```bash
+# Average over custom window
 avg:system.cpu.user{*}.rollup(avg, 60)
+→ Average CPU in 60-second windows
 
-# Average CPU over 60 second windows
+# Sum over window
+sum:http.requests{*}.rollup(sum, 300)
+→ Total requests per 5 minutes
 ```
 
-**Timeshift:**
+**Use Case:**
 ```
-# Compare with yesterday
+Long timeframes (days/weeks):
+→ Default rollup = 1 point per pixel
+→ Can miss spikes
+
+Custom rollup:
+→ rollup(max, 60)
+→ Shows peak value in each window
+→ Won't miss spikes
+```
+
+---
+
+#### **timeshift() - Compare to Past**
+
+```bash
+# Compare to yesterday
 avg:system.cpu.user{*}
 timeshift(avg:system.cpu.user{*}, 86400)
 
-# 86400 seconds = 1 day
+# Compare to last week
+timeshift(avg:system.cpu.user{*}, 604800)
 ```
 
-**Anomalies:**
+**Seconds conversion:**
 ```
-# Detect anomalies
-anomalies(avg:system.cpu.user{*}, 'basic', 2)
-
-# Algorithm: basic, agile, robust
-# Bounds: 2 = 2 standard deviations
-```
-
-**Forecast:**
-```
-# Predict future values
-forecast(avg:system.disk.used{*}, 'linear', 1d)
-
-# Algorithm: linear, seasonal
-# Duration: 1d = 1 day ahead
+1 hour   = 3600
+1 day    = 86400
+1 week   = 604800
+1 month  = 2592000 (30 days)
 ```
 
-**Smoothing:**
+**Use Case:**
 ```
-# Exponentially weighted moving average
-ewma_5(avg:system.cpu.user{*})
-
-# Options: ewma_3, ewma_5, ewma_10, ewma_20
+Banking example:
+- Compare transaction volume today vs last Monday
+- Identify weekly patterns
+- Validate capacity planning
 ```
 
 ---
 
-## 🎨 Creating Dashboards
+#### **anomalies() - ML Detection**
 
-### Step-by-Step: Create Dashboard
-
-**1. Navigate:**
-```
-Dashboards → New Dashboard
-→ Choose: New Timeboard or New Screenboard
+```bash
+anomalies(avg:system.cpu.user{*}, 'basic', 2)
+           │                        │       │
+           metric                algorithm bounds
 ```
 
-**2. Add Widget:**
+**Algorithms:**
 ```
-Click: + Add Widget
-Select widget type
-Configure query
-Customize visualization
-Set title
-Save
-```
-
-**3. Example: System Overview Dashboard**
-
-```yaml
-Dashboard: "Production System Overview"
-Type: Timeboard
-Timeframe: Past 1 Hour
-
-Widgets:
-  - Row 1:
-    - CPU Usage (Timeseries)
-      Query: avg:system.cpu.user{env:production} by {host}
-      Viz: Lines
-      
-    - Memory Usage (Timeseries)
-      Query: avg:system.mem.used{env:production} by {host}
-      Viz: Area
-      
-  - Row 2:
-    - Request Rate (Timeseries)
-      Query: sum:http.requests{env:production}.as_rate()
-      Viz: Bars
-      
-    - Error Rate (Timeseries)
-      Query: sum:http.errors{env:production}.as_rate()
-      Viz: Lines (Red)
-      
-  - Row 3:
-    - Top Hosts by CPU (Top List)
-      Query: avg:system.cpu.user{env:production} by {host}
-      Limit: 10
-      
-    - Response Time p95 (Query Value)
-      Query: p95:trace.http.request.duration{env:production}
-      Unit: ms
+basic:
+  - Fast, simple
+  - Good for stable metrics
+  
+agile:
+  - Adapts quickly to changes
+  - Good for dynamic metrics
+  
+robust:
+  - Ignores outliers
+  - Good for noisy data
 ```
 
-### Template Variables
+**Bounds:**
+```
+2 = 2 standard deviations
+  → Moderate sensitivity
+  
+3 = 3 standard deviations
+  → Lower sensitivity (fewer false positives)
+  
+1 = 1 standard deviation
+  → High sensitivity (more alerts)
+```
+
+---
+
+#### **forecast() - Predict Future**
+
+```bash
+forecast(avg:system.disk.used{*}, 'linear', 1w)
+         │                         │         │
+         metric                  algorithm  horizon
+```
+
+**Use Case:**
+```
+Capacity planning:
+- When will disk be full?
+- When to add more servers?
+- Budget planning
+```
+
+**Banking Example:**
+```
+Transaction growth:
+forecast(sum:transactions{*}.as_rate(), 'linear', 1mo)
+
+Shows: "At current rate, will hit 10K TPS in 3 weeks"
+Action: Plan infrastructure upgrade
+```
+
+---
+
+## 🎯 Dashboard Design Patterns
+
+### **Pattern 1: RED Method Dashboard**
+
+**For: Service/API monitoring**
+
+```
+RED = Rate, Errors, Duration
+
+┌─────────────────────────────────────────────┐
+│  Service: Payment API                        │
+├─────────────────────────────────────────────┤
+│  Rate (Traffic)                              │
+│  - Requests per second                       │
+│  - Timeseries: sum:requests{*}.as_rate()    │
+├─────────────────────────────────────────────┤
+│  Errors (Error Rate)                         │
+│  - Error percentage                          │
+│  - Query: (errors / total) * 100            │
+├─────────────────────────────────────────────┤
+│  Duration (Latency)                          │
+│  - p50, p95, p99 response time              │
+│  - Distribution widget                       │
+└─────────────────────────────────────────────┘
+```
+
+**Why RED:**
+- ✅ Complete service health picture
+- ✅ Industry standard
+- ✅ Easy to understand
+
+---
+
+### **Pattern 2: USE Method Dashboard**
+
+**For: Infrastructure monitoring**
+
+```
+USE = Utilization, Saturation, Errors
+
+┌─────────────────────────────────────────────┐
+│  Resource: CPU                               │
+├─────────────────────────────────────────────┤
+│  Utilization                                 │
+│  - % of CPU used                             │
+│  - avg:system.cpu.user{*}                   │
+├─────────────────────────────────────────────┤
+│  Saturation                                  │
+│  - Load average, queue depth                 │
+│  - avg:system.load.1{*}                     │
+├─────────────────────────────────────────────┤
+│  Errors                                      │
+│  - CPU throttling, context switches          │
+└─────────────────────────────────────────────┘
+```
+
+**Apply to:**
+- CPU, Memory, Disk, Network
+- Database connections
+- Queue systems
+
+---
+
+### **Pattern 3: Golden Signals (Google SRE)**
+
+```
+4 Golden Signals: Latency, Traffic, Errors, Saturation
+
+Similar to RED + USE, but adds:
+- Saturation (resource fullness)
+
+Banking implementation:
+┌─────────────────────────────────────────────┐
+│  Latency: p95 transaction time < 200ms      │
+│  Traffic: 1000 TPS current                  │
+│  Errors: 0.1% error rate                    │
+│  Saturation: Database connections 70% used  │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+### **Pattern 4: Hierarchical (Top-Down)**
+
+```
+Executive View → Team View → Service View → Resource View
+
+Example: Banking Dashboard Hierarchy
+
+Level 1 (Executive):
+├─ Overall SLO: 99.95%
+├─ Total Transactions: 1.2M today
+├─ Revenue: $500K today
+└─ Critical Incidents: 0
+
+Level 2 (Team Lead):
+├─ Service Status (all services)
+├─ Team-specific SLOs
+├─ Recent Deployments
+└─ Top Issues
+
+Level 3 (Engineer):
+├─ Detailed service metrics
+├─ Error breakdown
+├─ Performance deep dive
+└─ Resource utilization
+
+Level 4 (Deep Dive):
+├─ Individual host metrics
+├─ Database queries
+├─ Log streams
+└─ Trace analysis
+```
+
+---
+
+## 🎨 Design Best Practices
+
+### **1. Layout & Organization**
+
+**Grid System:**
+```
+✅ Use consistent widget sizes
+   - Full width for titles
+   - 50% width for paired metrics
+   - 33% width for trios
+   
+❌ Random sizes and placement
+   - Hard to scan
+   - Looks unprofessional
+```
+
+**Logical Flow:**
+```
+Top to Bottom priority:
+1. Most important metrics (top)
+2. Supporting context (middle)
+3. Deep dive / details (bottom)
+
+Left to Right:
+1. Input metrics (left)
+2. Processing metrics (middle)
+3. Output metrics (right)
+
+Example: API Dashboard
+┌──────────────┬──────────────┬──────────────┐
+│ Request Rate │ Process Time │ Response Rate│
+│ (Input)      │ (Middle)     │ (Output)     │
+└──────────────┴──────────────┴──────────────┘
+```
+
+---
+
+### **2. Color Usage**
+
+**Standard Colors:**
+```
+Green: Good / Normal / Success
+Yellow: Warning / Degraded
+Red: Critical / Error / Alert
+Blue: Info / Neutral
+Purple: Custom / Secondary metric
+```
+
+**Consistency:**
+```
+✅ Same colors for same concepts across all dashboards
+   - Errors always red
+   - Success always green
+   
+❌ Random colors
+   - Errors sometimes red, sometimes orange
+   - Confusing for teams
+```
+
+**Color Blindness:**
+```
+⚠️ 8% of men are color blind (red-green most common)
+
+Accessible approach:
+✅ Use shapes + colors
+✅ Use text labels
+✅ Use patterns (solid, dashed, dotted)
+```
+
+---
+
+### **3. Naming Conventions**
+
+**Dashboard Names:**
+```
+Pattern: [Team/System] - [Purpose]
+
+Examples:
+✅ "Payment API - Production Health"
+✅ "Core Banking - Executive Overview"
+✅ "Infrastructure - On-Call Dashboard"
+
+❌ "Dashboard 1"
+❌ "John's Dashboard"
+❌ "Temp Dashboard"
+```
+
+**Widget Titles:**
+```
+Pattern: [Metric Name] - [Context]
+
+Examples:
+✅ "Response Time - p95 (Last 1 hour)"
+✅ "Error Rate % - By Service"
+✅ "Database Connections - PostgreSQL Primary"
+
+❌ "Graph 1"
+❌ "Metric"
+❌ "system.cpu.user"
+```
+
+---
+
+### **4. Context & Documentation**
+
+**Add Notes Widgets:**
+```
+Purpose:
+- Explain what metrics mean
+- Document thresholds
+- Link to runbooks
+- Provide business context
+
+Example:
+┌────────────────────────────────────────────┐
+│ 📝 Response Time Targets                   │
+│                                             │
+│ Target: p95 < 200ms                        │
+│ Warning: p95 > 200ms                       │
+│ Critical: p95 > 500ms                      │
+│                                             │
+│ Runbook: wiki.company.com/api-slow         │
+│ On-call: Slack #team-backend              │
+└────────────────────────────────────────────┘
+```
+
+**Use Markdown:**
+```markdown
+## Response Time SLO
+
+**Target**: p95 < 200ms  
+**Current**: 185ms ✅
+
+### Actions if breached:
+1. Check database slow query log
+2. Review recent deployments
+3. Escalate to @backend-lead
+
+[Runbook](https://wiki.company.com/slo-breach)
+```
+
+---
+
+### **5. Template Variables**
 
 **Purpose:**
 ```
-Dynamic filtering without editing queries
-Reusable dashboards
-Easy switching between environments
+Make dashboards reusable across:
+- Environments (prod, staging, dev)
+- Services (api, web, worker)
+- Teams (backend, frontend, data)
 ```
 
-**Example Setup:**
+**Implementation:**
+```yaml
+Variable 1: $env
+  Tag: env
+  Default: production
+  Values: production, staging, development
 
-```
-Variable Name: $env
-Tag: env
-Default: production
-Values: production, staging, development
+Variable 2: $service
+  Tag: service
+  Default: *
+  Values: (auto from tag)
 
-Variable Name: $service
-Tag: service
-Default: *
-Values: api, web, worker, database
+Variable 3: $region
+  Tag: region
+  Default: *
+  Values: us-east-1, us-west-2, eu-west-1
 
-Variable Name: $host
-Tag: host
-Default: *
-Values: (Auto-populated)
-```
-
-**Usage in Queries:**
-```
-# Before
-avg:system.cpu.user{env:production,service:api}
-
-# After (with template variables)
-avg:system.cpu.user{env:$env,service:$service}
-
-# User can now select values from dropdowns
+Usage in queries:
+avg:system.cpu.user{env:$env,service:$service,region:$region}
 ```
 
-**Advanced Variable:**
+**User Experience:**
 ```
-Variable Name: $aggregation
-Type: Text input
-Default: avg
-Usage: $aggregation:system.cpu.user{env:$env}
+Before variables:
+- Need separate dashboard per env = 3 dashboards
+- Change service = edit every query
 
-# Allows user to choose aggregation method
+With variables:
+- 1 dashboard for all envs
+- Dropdown to switch env/service
+- No editing needed
 ```
 
 ---
 
-## 🎯 Dashboard Best Practices
+## ⚠️ Common Mistakes
 
-### 1. Organization
-
-```
-✅ Group related metrics together
-✅ Use rows/sections with headers
-✅ Order by importance (top = most critical)
-✅ Consistent time frames
-✅ Limit widgets (10-15 per dashboard)
-
-❌ Don't overcrowd
-❌ Don't mix unrelated metrics
-❌ Don't use inconsistent time ranges
-```
-
-### 2. Naming Conventions
+### **Mistake 1: Too Many Widgets**
 
 ```
-✅ Clear, descriptive names
-   "Production API - Performance Overview"
-   "Database - MySQL Cluster Health"
-
-❌ Vague names
-   "Dashboard 1"
-   "My Dashboard"
-```
-
-### 3. Color Coding
-
-```
-✅ Green: Good/Normal
-✅ Yellow: Warning
-✅ Red: Critical/Error
-✅ Blue: Info/Neutral
-
-Consistent across all dashboards
-```
-
-### 4. Context
-
-```
-✅ Add notes/text widgets explaining metrics
-✅ Document thresholds
-✅ Link to runbooks
-✅ Add business context
-
-Example Note Widget:
-"Target: < 200ms response time
-Alert threshold: > 500ms
-Runbook: https://wiki.company.com/api-slow"
-```
-
-### 5. Responsive Design
-
-```
-✅ Test on different screen sizes
-✅ Use appropriate widget sizes
-✅ Important metrics → Larger widgets
-✅ Details → Smaller widgets
+❌ Problem: 100 widgets on one dashboard
+   → Information overload
+   → Slow load time
+   → Nothing stands out
+   
+✅ Solution: Multiple focused dashboards
+   Dashboard 1: Overview (10 widgets)
+   Dashboard 2: Deep Dive CPU (20 widgets)
+   Dashboard 3: Deep Dive Network (20 widgets)
 ```
 
 ---
 
-## 📤 Sharing & Export
+### **Mistake 2: No Aggregation**
 
-### Share Dashboard
-
-**1. Public URL:**
 ```
-Dashboard → Share → Generate Public URL
-→ Anyone with link can view (read-only)
-→ Set expiration time
-→ Revoke anytime
-```
+❌ Problem: 
+   Query: avg:system.cpu.user{*} by {host}
+   Result: 1000 lines (one per host)
+   → Unreadable
 
-**2. Email/Slack:**
-```
-Dashboard → Share → Send Snapshot
-→ Choose recipients
-→ Add message
-→ Schedule recurring (optional)
-```
-
-**3. Embed:**
-```
-Dashboard → Share → Generate Embed Code
-→ Copy iframe code
-→ Paste in wiki/docs
-→ Requires authentication
-```
-
-### Export
-
-**JSON:**
-```
-Dashboard → Settings → Export Dashboard JSON
-→ Can import to other accounts
-→ Version control in git
-→ Infrastructure as Code
-```
-
-**PDF:**
-```
-Dashboard → Generate PDF
-→ Select timeframe
-→ Download or email
-→ Good for reports
-```
-
-**API:**
-```python
-from datadog import initialize, api
-
-initialize()
-
-# Get dashboard
-dashboard = api.Dashboard.get('dashboard-id')
-
-# Create dashboard from JSON
-api.Dashboard.create(
-    title='My Dashboard',
-    widgets=[...],
-    layout_type='ordered'
-)
+✅ Solution: Aggregate appropriately
+   Option 1: avg across all hosts
+     avg:system.cpu.user{*}
+   
+   Option 2: Top 10 only
+     Top List widget
+     
+   Option 3: Percentiles
+     p95:system.cpu.user{*}
 ```
 
 ---
 
-## 📺 Monitoring Dashboard on TV
+### **Mistake 3: Wrong Timeframe**
 
-### Setup TV Display
-
-**1. Full Screen Mode:**
 ```
-Dashboard → Settings → TV Mode
-→ Hides navigation
-→ Auto-refresh
-→ Optimized for large screens
-```
-
-**2. Kiosk Mode:**
-```
-URL parameter: ?kiosk=true
-Example: https://app.datadoghq.com/dashboard/abc?kiosk=true
-
-Features:
-- No navigation bar
-- No edit controls
-- Clean view
-```
-
-**3. Rotation:**
-```
-Create multiple dashboards
-Use browser extension for tab rotation
-Example: Tab Rotator, Revolver
-
-Setup:
-- Dashboard 1: System Overview (30 sec)
-- Dashboard 2: Application Metrics (30 sec)
-- Dashboard 3: Error Tracking (20 sec)
-- Repeat
+❌ CPU dashboard showing last 5 years
+   → Can't see recent spikes
+   
+✅ Match timeframe to use case:
+   Real-time monitoring: Last 1 hour
+   Daily operations: Last 4 hours
+   Trends: Last 7 days
+   Capacity planning: Last 30 days
 ```
 
 ---
 
-## 🔧 Advanced Features
+### **Mistake 4: No Thresholds**
 
-### 1. Dashboard Lists
 ```
-Organize dashboards into lists
-Share entire list with team
-Example lists:
-- "Infrastructure Team Dashboards"
-- "On-Call Dashboards"
-- "Executive Dashboards"
-```
-
-### 2. Conditional Formatting
-```
-Query Value Widget:
-Value < 50%  → Green background
-Value 50-80% → Yellow background
-Value > 80%  → Red background + Alert icon
-```
-
-### 3. Event Overlays
-```
-Show deployments, alerts, incidents on timeline
-
-Example:
-Timeseries of CPU usage
-+ Overlay: Deployment events
-→ See if deployment caused CPU spike
-```
-
-### 4. Custom Links
-```
-Widget → Add Custom Links
-
-Example:
-Click on error count →
-Jumps to: Logs Explorer filtered by error status
-```
-
-### 5. Mobile App
-```
-iOS/Android: Datadog Mobile App
-Features:
-- View dashboards
-- Receive alerts
-- Acknowledge incidents
-- Quick actions
+❌ Just show metrics
+   → Users don't know if good or bad
+   
+✅ Add context:
+   - Horizontal line at threshold
+   - Conditional formatting
+   - Notes with targets
+   
+Example: CPU graph
+- Add red line at 80% (critical)
+- Add yellow line at 60% (warning)
+- Note: "Target: < 60% average"
 ```
 
 ---
 
-## 📝 Example Dashboards
+## 📊 Banking Dashboard Examples
 
-### Dashboard 1: Web Application Health
+### **Executive Dashboard**
 
 ```yaml
-Name: "Production Web App - Health Dashboard"
-Type: Timeboard
-Auto-refresh: 1 minute
+Purpose: High-level business + tech metrics
+Audience: CTO, VP Engineering, Business Leaders
+Refresh: 5 minutes
+Type: Screenboard
 
-Layout:
-  Row 1 - Overview:
-    - Total Requests (Query Value)
-      Query: sum:http.requests{env:production}.as_count()
-      Timeframe: Last 1 hour
-      
-    - Error Rate % (Query Value)
-      Query: (sum:http.errors{*} / sum:http.requests{*}) * 100
-      Conditional: > 1% = Red
-      
-    - Avg Response Time (Query Value)
-      Query: avg:trace.http.request.duration{*}
-      Unit: ms
-      
-    - Active Users (Query Value)
-      Query: count_nonzero:users.active{*}
-      
-  Row 2 - Traffic:
-    - Requests per Minute (Timeseries)
-      Query: sum:http.requests{env:production}.as_rate()
-      Group by: endpoint
-      
-    - Response Codes (Timeseries - Stacked)
-      Queries:
-        - sum:http.requests{status:2xx}
-        - sum:http.requests{status:4xx}
-        - sum:http.requests{status:5xx}
-        
-  Row 3 - Performance:
-    - Response Time p95 (Timeseries)
-      Query: p95:trace.http.request.duration{*}
-      
-    - Slow Endpoints (Top List)
-      Query: avg:trace.http.request.duration{*} by {endpoint}
-      Order: Desc, Limit: 10
-      
-  Row 4 - Infrastructure:
-    - CPU Usage (Timeseries)
-      Query: avg:system.cpu.user{role:web} by {host}
-      
-    - Memory Usage (Timeseries)
-      Query: avg:system.mem.used_pct{role:web} by {host}
+Widgets (12 total):
+
+Row 1 (KPIs):
+  - Total Transactions Today (Query Value)
+  - Transaction Success Rate % (Query Value, conditional format)
+  - Average Response Time (Query Value)
+  - SLO Status - 99.9% (SLO Widget)
+
+Row 2 (Trends):
+  - Transactions Per Hour (Timeseries)
+  - Revenue Per Hour (Timeseries, business metric)
+  
+Row 3 (Ops):
+  - Active Incidents (Query Value)
+  - Recent Deployments (Event Stream)
+  - System Health (Host Map)
+  
+Row 4 (Notes):
+  - Status Message (Text: "All systems operational ✅")
+  - On-Call Contact (Text: current on-call engineer)
 ```
 
-### Dashboard 2: Database Monitoring
+---
+
+### **On-Call Dashboard**
 
 ```yaml
-Name: "PostgreSQL Performance"
+Purpose: Quick triage and incident response
+Audience: On-call engineer
+Refresh: 1 minute (auto)
+Type: Timeboard (shared timeline for correlation)
+
+Widgets (20 total):
+
+Critical Alerts (Top):
+  - Active Alerts (Monitor Status Widget)
+  - Error Rate % (Query Value, big, red if > 1%)
+  
+Service Health:
+  - Request Rate (Timeseries)
+  - Response Time p95/p99 (Timeseries)
+  - Error Count (Timeseries)
+  - Top Errors by Endpoint (Top List)
+  
+Infrastructure:
+  - CPU Usage by Host (Timeseries)
+  - Memory Usage by Host (Timeseries)
+  - Disk Usage (Host Map)
+  
+Logs:
+  - Error Logs (Log Stream, live)
+  - Recent Deployments (Event Timeline)
+  
+Context:
+  - Runbook Links (Text widget)
+  - Escalation Contacts (Text widget)
+```
+
+---
+
+### **Service Deep Dive**
+
+```yaml
+Service: Payment Processing API
+Purpose: Detailed performance analysis
+Audience: Payment team engineers
 Type: Timeboard
 
 Widgets:
-  - Connection Pool (Timeseries)
-    Query: avg:postgresql.connections{*}
-    
-  - Slow Queries (Log Stream)
-    Query: source:postgresql @duration:>1000
-    
-  - Query Rate (Timeseries)
-    Query: sum:postgresql.queries{*}.as_rate()
-    
-  - Deadlocks (Timeseries)
-    Query: sum:postgresql.deadlocks{*}
-    Alert: > 0
-    
-  - Table Sizes (Top List)
-    Query: max:postgresql.table.size{*} by {table}
-    
-  - Cache Hit Ratio (Query Value)
-    Query: avg:postgresql.cache_hit_ratio{*}
-    Target: > 99%
-```
 
----
-
-## 🤔 Dashboard Design Decisions
-
-### System monitoring dashboard:
-
-```
-Tạo dashboard cho system monitoring:
-
-Required Widgets:
-1. CPU Usage (timeseries) - last 4 hours
-2. Memory Usage (timeseries) - last 4 hours
-3. Disk Usage (query value) - current
-4. Top 5 processes by CPU (top list)
-5. Network Traffic In/Out (timeseries)
-
-Template Variables:
-- $host
-- $env
-
-Bonus:
-- Add conditional formatting
-- Add note widget with thresholds
-```
-
-### Application monitoring dashboard:
-
-```
-Tạo dashboard cho web application:
-
-Required:
-1. Request rate (last 1 hour)
-2. Error rate %
-3. Response time (p50, p95, p99)
-4. Top endpoints by traffic
-5. Error log stream
-
-Advanced:
-- Compare với yesterday (timeshift)
-- Overlay deployment events
-- Add custom links to logs
-```
-
-### Template variables strategy:
-
-```
-Tạo dashboard với template variables:
-
-Variables:
-1. $env (production, staging)
-2. $service (api, web, worker)
-3. $region (us-east-1, us-west-2, eu-west-1)
-
-All widgets phải dùng variables
-Test bằng cách switch giữa các values
-```
-
-### Sharing & export considerations:
-
-```
-Tasks:
-1. Export dashboard to JSON
-2. Commit JSON to git
-3. Generate public URL (24h expiration)
-4. Create scheduled snapshot (send daily via email)
-5. Embed dashboard in Confluence/Wiki
-```
-
----
-
-## 📚 Resources
-
-### Official Docs
-```
-- Dashboard Overview: https://docs.datadoghq.com/dashboards/
-- Widget Reference: https://docs.datadoghq.com/dashboards/widgets/
-- Query Functions: https://docs.datadoghq.com/dashboards/functions/
-```
-
-### Video Tutorials
-```
-- Datadog Dashboard Basics (YouTube)
-- Advanced Querying Techniques
-- Template Variables Deep Dive
+RED Metrics:
+  - Request Rate (total, by endpoint)
+  - Error Rate (total, by error type)
+  - Latency Distribution (p50/p75/p95/p99)
+  
+Dependencies:
+  - Database Query Time
+  - External API Calls (payment gateway)
+  - Cache Hit Rate
+  
+Resources:
+  - CPU per Container
+  - Memory per Container
+  - Network I/O
+  
+Business Metrics:
+  - Transaction Amount (sum)
+  - Average Transaction Size
+  - Payment Methods Distribution
+  
+Traces & Logs:
+  - Slow Traces (> 1s)
+  - Error Logs Stream
+  - Deployment Events
 ```
 
 ---
 
 ## 📝 Tóm Tắt
 
-### Key Concepts
+### **Key Decisions:**
 
 ```
-1. DASHBOARD TYPES
-   - Timeboard: Shared timeline, troubleshooting
-   - Screenboard: Flexible layout, presentations
+1. Dashboard Type
+   Timeboard: Troubleshooting, correlation
+   Screenboard: Overview, mixed timeframes
+   
+2. Widget Selection
+   Match widget to data type
+   Don't force wrong widget
+   
+3. Query Design
+   Aggregate appropriately
+   Use template variables
+   Add context (thresholds, notes)
+   
+4. Layout
+   Prioritize: Top = most important
+   Group related metrics
+   Consistent sizing
+   
+5. Audience
+   Different dashboards for different audiences
+   Executive ≠ Engineer dashboards
+```
 
-2. WIDGET TYPES
-   - Timeseries, Query Value, Top List
-   - Heatmap, Distribution, Log Stream
-   - Service Map, Table, SLO
+### **Best Practices:**
 
-3. QUERY SYNTAX
-   aggregation:metric{filters} by {tags}
+```
+✅ Purpose-built dashboards
+✅ Clear naming conventions
+✅ Add context (notes, thresholds)
+✅ Use template variables
+✅ Conditional formatting
+✅ Limit widgets (10-30 per dashboard)
+✅ Document in notes widgets
+```
 
-4. TEMPLATE VARIABLES
-   Dynamic filtering, reusable dashboards
+### **Banking Specifics:**
 
-5. BEST PRACTICES
-   - Clear organization
-   - Consistent naming
-   - Appropriate colors
-   - Context & documentation
+```
+✅ SLO widgets prominent
+✅ Business metrics included
+✅ Compliance/audit trail
+✅ Multi-region views
+✅ Separate dashboards for different stakeholders
 ```
 
 ---
 
 ## ➡️ Bước Tiếp Theo
 
-Bạn đã biết cách tạo và sử dụng dashboards!
-
-**Bài tiếp theo**: [06 - Metrics và Monitoring](06-METRICS.md)
-
-Trong bài tiếp theo, chúng ta sẽ học sâu về metrics, custom metrics, và monitoring strategies.
+**Related Topics:**
+- [06 - Metrics Design](06-METRICS.md) - Metric types, naming
+- [12 - Monitors & Alerts](12-MONITORS-ALERTS.md) - Alert from dashboard metrics
+- [13 - SLO](13-SLO.md) - SLO widgets and tracking
 
 ---
 
 **📌 Ghi Chú Của Bạn**
 ```
-(Dashboard IDs, query examples, tips & tricks)
+(Dashboard designs, widget decisions, lessons learned)
 
 
 
@@ -927,4 +1177,3 @@ Trong bài tiếp theo, chúng ta sẽ học sâu về metrics, custom metrics, 
 
 
 ```
-

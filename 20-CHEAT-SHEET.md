@@ -1,754 +1,807 @@
-# 20 - DATADOG CHEAT SHEET
+# 20 - QUICK REFERENCE & DECISION GUIDE
 
-## 🚀 Quick Reference Guide
+## 🚀 Purpose
+Fast lookup for common decisions, patterns, and quick references. Not a command cookbook - a decision support tool.
 
 ---
 
-## 📦 Agent Commands
+## 🎯 Common Scenarios & Decisions
 
-### Linux
+### **Scenario 1: "Which Metric Type Should I Use?"**
 
-```bash
-# Status
-sudo datadog-agent status
-
-# Start/Stop/Restart
-sudo systemctl start datadog-agent
-sudo systemctl stop datadog-agent
-sudo systemctl restart datadog-agent
-
-# Enable auto-start
-sudo systemctl enable datadog-agent
-
-# Check specific integration
-sudo datadog-agent check <CHECK_NAME>
-
-# View logs
-sudo tail -f /var/log/datadog/agent.log
-
-# Configuration check
-sudo datadog-agent config
-
-# Flare (diagnostics bundle)
-sudo datadog-agent flare <CASE_ID>
 ```
+Decision Tree:
 
-### Windows
-
-```powershell
-# Status
-& "$env:ProgramFiles\Datadog\Datadog Agent\bin\agent.exe" status
-
-# Restart
-Restart-Service datadogagent
-
-# Check
-& "$env:ProgramFiles\Datadog\Datadog Agent\bin\agent.exe" check <CHECK_NAME>
-```
-
-### Docker
-
-```bash
-# Status
-docker exec dd-agent agent status
-
-# Logs
-docker logs dd-agent -f
-
-# Restart
-docker restart dd-agent
+What are you measuring?
+│
+├─ Current state (can go up/down)
+│  Example: active_users, queue_size, temperature
+│  → Use: GAUGE
+│    statsd.gauge('metric', value)
+│
+├─ Counting events
+│  Example: requests, orders, errors
+│  │
+│  ├─ Need rate (per second)?
+│  │  → Use: COUNT + .as_rate() in query
+│  │    statsd.increment('requests')
+│  │    Query: sum:requests{*}.as_rate()
+│  │
+│  └─ Just total count?
+│     → Use: COUNT
+│       statsd.increment('orders')
+│       Query: sum:orders{*}.as_count()
+│
+├─ Duration or size (need percentiles)
+│  Example: response_time, file_size
+│  │
+│  ├─ Low volume (< 1K/sec)?
+│  │  → Use: DISTRIBUTION
+│  │    statsd.distribution('response_time', ms)
+│  │    Why: Full percentile flexibility
+│  │
+│  └─ High volume (> 1K/sec)?
+│     → Use: HISTOGRAM
+│       statsd.histogram('response_time', ms)
+│       Why: More cost-effective
+│
+└─ Unique counts
+   Example: unique_visitors, distinct_errors
+   → Use: SET (rare, usually use gauge with count distinct)
+     statsd.set('visitors', user_id)
 ```
 
 ---
 
-## 📊 Query Language
-
-### Metric Query Syntax
+### **Scenario 2: "How to Tag This Metric?"**
 
 ```
-<aggregation>:<metric>{<filters>} [by {<tags>}]
-```
+Decision Framework:
 
-**Aggregations:**
-```
-avg, sum, min, max, count
-```
+Q1: How many unique values?
+    < 100 → OK to tag ✅
+    100-1000 → Caution ⚠️
+    > 1000 → DON'T TAG ❌ (use logs instead)
+    
+Q2: Can I group/bucket?
+    user_id (million values) → user_tier (3 values) ✅
+    specific_error_message → error_type ✅
+    timestamp → hour_of_day ✅
+    
+Q3: Will I query by this?
+    YES → Tag it ✅
+    NO → Don't add (reduce cardinality) ✅
+    
+Q4: For debugging or analytics?
+    Debugging → Logs (high cardinality OK)
+    Analytics → Tags (low cardinality required)
 
-**Examples:**
-```bash
-# Average CPU across all hosts
-avg:system.cpu.user{*}
+Examples:
 
-# Sum requests by service
-sum:http.requests{env:production} by {service}
+✅ GOOD Tags:
+  env:production              (3 values: dev, staging, prod)
+  service:payment-api         (20 services in system)
+  status:success              (2-3 values)
+  user_tier:premium           (3 tiers)
+  endpoint:/api/users         (~100 endpoints)
+  region:us-east-1            (5 regions)
 
-# Max memory used by host
-max:system.mem.used{*} by {host}
-
-# Filter by multiple tags
-avg:system.cpu.user{env:production,service:web-api}
-```
-
-### Functions
-
-```bash
-# Rate (convert count to per-second)
-sum:http.requests{*}.as_rate()
-
-# Count (convert rate to count)
-sum:http.requests{*}.as_count()
-
-# Rollup (custom time aggregation)
-avg:system.cpu.user{*}.rollup(avg, 60)
-
-# Timeshift (compare to past)
-avg:system.cpu.user{*}
-timeshift(avg:system.cpu.user{*}, 86400)  # -1 day
-
-# Arithmetic
-(avg:system.mem.total{*} - avg:system.mem.used{*}) / avg:system.mem.total{*} * 100
-
-# Anomalies
-anomalies(avg:system.cpu.user{*}, 'basic', 2)
-
-# Forecast
-forecast(avg:disk.used{*}, 'linear', 1w)
-
-# EWMA (smoothing)
-ewma_5(avg:system.cpu.user{*})
+❌ BAD Tags (High Cardinality):
+  user_id:12345               (millions)
+  request_id:abc123           (unique each request)
+  timestamp:1234567890        (always changing)
+  email:user@example.com      (millions)
+  specific_error_msg          (thousands of variations)
 ```
 
 ---
 
-## 🔍 Log Search Syntax
+### **Scenario 3: "Dashboard Widget Selection"**
 
-### Basic Search
-
-```bash
-# By service
-service:web-api
-
-# By status
-status:error
-
-# By environment
-env:production
-
-# Combine
-service:web-api status:error env:production
 ```
+What do you want to show?
 
-### Boolean Operators
-
-```bash
-# AND
-service:web-api AND status:error
-
-# OR
-status:(error OR warning)
-service:(web-api OR mobile-api)
-
-# NOT
-service:web-api -status:info
-```
-
-### Wildcards
-
-```bash
-# Prefix
-service:web-*
-
-# Suffix
-user.email:*@gmail.com
-
-# Contains
-message:*timeout*
-```
-
-### Ranges
-
-```bash
-# Numeric range
-@http.response_time:[100 TO 500]
-
-# Greater than
-@response_time:>1000
-
-# Less than
-@user.age:<18
-
-# Time range
-@timestamp:[now-1h TO now]
-```
-
-### Facets
-
-```bash
-# Has attribute
-@user.id:*
-
-# Doesn't have attribute
--@error.type:*
-
-# Specific value
-@http.status_code:500
-@user.tier:premium
+┌─ Single current value → Query Value
+│  Examples: Current CPU: 67%, Active users: 850
+│
+├─ Trend over time → Timeseries
+│  Examples: Request rate, Memory usage, Response time
+│
+├─ Ranking (top/bottom) → Top List
+│  Examples: Top 10 hosts by CPU, Slowest 5 endpoints
+│
+├─ Distribution → Distribution Widget
+│  Examples: Latency percentiles (p50/p95/p99)
+│
+├─ Pattern across dimensions → Heatmap
+│  Examples: Errors by service × time, Latency by region
+│
+├─ Live events → Log Stream
+│  Examples: Real-time errors, Deployment logs
+│
+├─ Infrastructure overview → Host Map
+│  Examples: CPU across all hosts (color-coded)
+│
+├─ Service dependencies → Service Map
+│  Examples: Microservices topology (auto-generated from APM)
+│
+└─ Multiple metrics comparison → Table
+   Examples: Host comparison (CPU, RAM, Disk), Service SLOs
 ```
 
 ---
 
-## 🏷️ Tags Reference
-
-### Unified Service Tagging
-
-```yaml
-env:production
-service:payment-api
-version:v1.2.3
-```
-
-### Common Tags
-
-```yaml
-# Infrastructure
-host:web-server-01
-region:us-east-1
-availability_zone:us-east-1a
-instance_type:t3.large
-
-# Application
-service:payment-api
-team:backend
-component:api
-language:python
-
-# Environment
-env:production
-datacenter:us1
-
-# Business
-customer_tier:premium
-feature:new_checkout
-```
-
-### Tag Rules
+### **Scenario 4: "Query Aggregation Choice"**
 
 ```
-✅ Lowercase
-✅ Use colons: key:value
-✅ Low cardinality
-✅ Descriptive
+Choose aggregation based on use case:
 
-❌ No spaces
-❌ No special characters
-❌ High cardinality (user_id, request_id)
+avg:
+  ✅ Most common, general purpose
+  ✅ CPU usage, memory, response time
+  ✅ Smooths out spikes
+  Example: avg:system.cpu.user{*}
+
+sum:
+  ✅ Counts, requests, bytes
+  ✅ Total across all hosts/services
+  Example: sum:http.requests{*}
+
+max:
+  ✅ Peak values, worst case
+  ✅ Detect spikes
+  Example: max:system.cpu.user{*} by {host}
+         → Find which host peaked
+
+min:
+  ✅ Lowest value, best case
+  ✅ Available resources
+  Example: min:system.disk.free{*}
+         → Least free disk space
+
+pXX (percentiles):
+  ✅ Latency, performance metrics
+  ✅ Better than average for user experience
+  Example: p95:trace.http.request.duration{*}
+         → 95% of requests faster than this
 ```
 
 ---
 
-## 📨 Sending Metrics
-
-### DogStatsD
-
-```python
-from datadog import statsd
-
-# Gauge
-statsd.gauge('my.metric', 100, tags=['env:prod'])
-
-# Counter
-statsd.increment('page.views', tags=['page:home'])
-statsd.decrement('items.in_stock')
-statsd.increment('sales.total', 5)  # Increment by 5
-
-# Histogram
-statsd.histogram('request.duration', 245)
-
-# Distribution
-statsd.distribution('file.size', 1024000)
-
-# Timing (histogram for durations)
-statsd.timing('database.query', 50)
-
-# Set (unique counts)
-statsd.set('unique.visitors', user_id)
-
-# Context manager
-with statsd.timed('my_function.duration'):
-    my_function()
-```
-
-### HTTP API
-
-```bash
-curl -X POST "https://api.datadoghq.com/api/v1/series" \
-  -H "Content-Type: application/json" \
-  -H "DD-API-KEY: ${DD_API_KEY}" \
-  -d '{
-    "series": [{
-      "metric": "my.metric",
-      "points": [['$(date +%s)', 100]],
-      "type": "gauge",
-      "tags": ["env:production"]
-    }]
-  }'
-```
-
----
-
-## 🔬 APM Instrumentation
-
-### Python
-
-```python
-# Automatic
-DD_SERVICE=my-app DD_ENV=prod DD_VERSION=1.0 ddtrace-run python app.py
-
-# Manual
-from ddtrace import tracer
-
-@tracer.wrap(service='my-service', resource='process_order')
-def process_order(order_id):
-    pass
-
-# Context manager
-with tracer.trace('operation.name', service='my-service') as span:
-    span.set_tag('user.id', user_id)
-    do_work()
-```
-
-### Node.js
-
-```javascript
-// tracer.js
-const tracer = require('dd-trace').init({
-  service: 'my-app',
-  env: 'production',
-  version: '1.0.0'
-});
-
-// app.js
-require('./tracer');  // Must be first!
-
-// Custom span
-const span = tracer.startSpan('operation.name');
-span.setTag('user.id', userId);
-span.finish();
-```
-
-### Java
-
-```bash
-java -javaagent:/path/to/dd-java-agent.jar \
-     -Ddd.service=my-app \
-     -Ddd.env=production \
-     -Ddd.version=1.0.0 \
-     -jar myapp.jar
-```
-
----
-
-## 📝 Log Configuration
-
-### Agent Log Collection
-
-```yaml
-# /etc/datadog-agent/conf.d/app.d/conf.yaml
-logs:
-  - type: file
-    path: /var/log/myapp/*.log
-    service: my-app
-    source: python
-    tags:
-      - env:production
-```
-
-### JSON Logging
-
-```python
-import logging
-import json
-
-class JSONFormatter(logging.Formatter):
-    def format(self, record):
-        log_obj = {
-            'timestamp': self.formatTime(record),
-            'level': record.levelname,
-            'message': record.getMessage(),
-            'logger': record.name
-        }
-        return json.dumps(log_obj)
-
-handler = logging.StreamHandler()
-handler.setFormatter(JSONFormatter())
-logger = logging.getLogger()
-logger.addHandler(handler)
-```
-
----
-
-## 🚨 Monitor Quick Reference
-
-### Monitor Types
+### **Scenario 5: "How Much to Sample?"**
 
 ```
-Metric Monitor       - Alert on metric values
-APM Monitor          - Alert on traces/spans
-Log Monitor          - Alert on log patterns
-Composite Monitor    - Combine multiple monitors
-Change Monitor       - Alert on metric changes
-Anomaly Monitor      - Detect unusual patterns
-Forecast Monitor     - Predict future issues
-Outlier Monitor      - Find anomalies in groups
-```
+Decision Matrix:
 
-### Alert Conditions
+┌─────────────────┬──────────┬──────────┬─────────────┐
+│ Data Type       │ Volume   │ Sample%  │ Reason      │
+├─────────────────┼──────────┼──────────┼─────────────┤
+│ Error traces    │ Any      │ 100%     │ Must catch  │
+│ Slow traces     │ Any      │ 100%     │ Debug perf  │
+│ Normal traces   │ Low      │ 100%     │ Affordable  │
+│                 │ Medium   │ 10-20%   │ Balance     │
+│                 │ High     │ 1-5%     │ Cost        │
+│ Info logs       │ Any      │ 10%      │ Not critical│
+│ Debug logs      │ Any      │ 0%       │ Never prod  │
+│ Security logs   │ Any      │ 100%     │ Compliance  │
+│ Business logs   │ Any      │ 100%     │ Analytics   │
+│ Health checks   │ High     │ 0%       │ Noise       │
+└─────────────────┴──────────┴──────────┴─────────────┘
 
-```yaml
-# Threshold
-avg:system.cpu.user{*} > 80
+Implementation:
 
-# Change
-avg:http.requests{*} increases > 50% compared to 1h ago
-
-# Anomaly
-anomalies(avg:metric{*}, 'basic', 2)
-
-# Forecast
-forecast(avg:disk.used{*}, 'linear', 1w) >= 90
-```
-
-### Notification Variables
-
-```
-{{value}}              - Current value
-{{threshold}}          - Alert threshold
-{{warn_threshold}}     - Warning threshold
-{{host.name}}          - Host name
-{{service.name}}       - Service name
-{{link}}               - Link to monitor
-{{log.link}}           - Link to logs
-
-# Conditionals
-{{#is_alert}} ... {{/is_alert}}
-{{#is_warning}} ... {{/is_warning}}
-{{#is_recovery}} ... {{/is_recovery}}
-```
-
----
-
-## 🔧 Configuration Files
-
-### Agent Main Config
-
-```yaml
-# /etc/datadog-agent/datadog.yaml
-
-api_key: <YOUR_API_KEY>
-site: datadoghq.com
-hostname: my-server
-
-tags:
-  - env:production
-  - team:backend
-
-logs_enabled: true
-
-apm_config:
-  enabled: true
-  apm_non_local_traffic: true
-
-process_config:
-  enabled: "true"
-
-dogstatsd_port: 8125
-```
-
-### Integration Config
-
-```yaml
-# /etc/datadog-agent/conf.d/postgres.d/conf.yaml
-init_config:
-
-instances:
-  - host: localhost
-    port: 5432
-    username: datadog
-    password: <PASSWORD>
-    tags:
-      - env:production
-      - role:primary
-```
-
----
-
-## 🐳 Docker & Kubernetes
-
-### Docker Compose
-
-```yaml
-version: '3'
-services:
-  datadog:
-    image: datadog/agent:latest
-    environment:
-      - DD_API_KEY=${DD_API_KEY}
-      - DD_SITE=datadoghq.com
-      - DD_LOGS_ENABLED=true
-      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
-      - DD_APM_ENABLED=true
-      - DD_APM_NON_LOCAL_TRAFFIC=true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /proc/:/host/proc/:ro
-      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
-    ports:
-      - "8126:8126"
-      - "8125:8125/udp"
-```
-
-### Kubernetes Helm
-
-```bash
-helm repo add datadog https://helm.datadoghq.com
-helm install datadog-agent datadog/datadog \
-  --set datadog.apiKey=<API_KEY> \
-  --set datadog.site=datadoghq.com \
-  --set datadog.logs.enabled=true \
-  --set datadog.apm.portEnabled=true
-```
-
----
-
-## 💰 Cost Optimization
-
-### Reduce Metric Cardinality
-
-```python
-# ❌ Bad: 1000 custom metrics
-for i in range(1000):
-    statsd.gauge(f'metric.{i}', value)
-
-# ✅ Good: 1 custom metric
-statsd.gauge('metric.aggregate', sum(values))
-```
-
-### Log Exclusion Filters
-
-```bash
-# Exclude health checks
-@http.url:"/health"
-
-# Exclude debug logs
-status:debug
-
-# Sample info logs (10%)
-status:info
-```
-
-### APM Sampling
-
-```yaml
+APM Sampling (in datadog.yaml):
 apm_config:
   analyzed_spans:
-    service-name|*: 0.1  # 10%
-    service-name|error: 1.0  # 100% errors
+    # Critical: always
+    payment-service|*: 1.0
+    auth-service|*: 1.0
+    
+    # Errors: always
+    *|error: 1.0
+    
+    # Normal: sample based on volume
+    web-api|*: 0.1        # 10% high traffic
+    mobile-api|*: 0.2     # 20% medium traffic
+    admin-api|*: 1.0      # 100% low traffic
+    
+    # Health: never
+    *|health: 0.0
+
+Log Sampling (in pipeline):
+- Index 100%: status:(error OR critical)
+- Sample 10%: status:info
+- Exclude: status:debug, @endpoint:/health
 ```
 
 ---
 
-## 🔗 Useful URLs
-
-### Datadog Sites
+### **Scenario 6: "Cost Optimization - Where to Start?"**
 
 ```
-US1:  https://app.datadoghq.com
-US3:  https://us3.datadoghq.com
-US5:  https://us5.datadoghq.com
-EU1:  https://app.datadoghq.eu
+Priority Order (Impact vs Effort):
+
+1. QUICK WINS (Do First):
+   
+   ✅ Exclude health check logs
+      Impact: 20-40% log cost reduction
+      Effort: 5 minutes
+      How: Exclusion filter: @endpoint:/health
+   
+   ✅ Sample info logs to 10%
+      Impact: 30-50% log cost reduction
+      Effort: 10 minutes
+      How: Sampling rule in log pipeline
+   
+   ✅ Remove high-cardinality tags
+      Impact: Can save 50-90% metric cost
+      Effort: 30 minutes (identify + fix)
+      Example: user_id tag → 1M metrics → $50K/month
+               Remove tag → 100 metrics → $500/month
+
+2. MEDIUM EFFORT (Do Second):
+   
+   ✅ APM sampling configuration
+      Impact: 30-50% APM cost
+      Effort: 1 hour
+      How: Configure analyzed_spans
+   
+   ✅ Reduce log retention
+      Impact: 10-30% log cost
+      Effort: 30 minutes
+      How: 7 days vs 15 days
+   
+   ✅ Disable unused integrations
+      Impact: 5-15% overall
+      Effort: 1 hour (audit + disable)
+
+3. ONGOING OPTIMIZATION:
+   
+   ✅ Regular usage dashboard review
+      Frequency: Weekly
+      Look for: Unexpected spikes, new high-cost services
+   
+   ✅ Tag cardinality monitoring
+      Frequency: Monthly
+      Alert on: Tags with > 1000 unique values
+   
+   ✅ Cost attribution by team
+      Purpose: Accountability, chargeback
+
+Cost Dashboard Query Examples:
+- Metric cardinality: Check Metrics Summary page
+- Log volume by service: sum:datadog.estimated_usage.logs.ingested_bytes{*} by {service}
+- APM spans by service: sum:datadog.estimated_usage.apm.ingested_spans{*} by {service}
 ```
 
-### API Endpoints (US1)
+---
+
+### **Scenario 7: "Agent Deployment Model Choice"**
 
 ```
-Metrics:  https://api.datadoghq.com/api/v1/series
-Logs:     https://http-intake.logs.datadoghq.com/v1/input
-Traces:   https://trace.agent.datadoghq.com
+Platform-Based Decision:
+
+VMs/Bare Metal:
+  → Agent per host (standard)
+  Install: Package manager (apt, yum)
+  Config: /etc/datadog-agent/datadog.yaml
+
+Docker (Single Host):
+  → Datadog Agent container
+  Install: docker run datadog/agent
+  Config: Environment variables
+  Volumes: /var/run/docker.sock, /proc/, /sys/fs/cgroup/
+
+Kubernetes:
+  → Cluster Agent + Node Agents (DaemonSet)
+  Install: Helm chart (recommended)
+  Config: values.yaml
+  Why: Cluster-level metrics, efficient API usage
+
+AWS Lambda:
+  → Serverless monitoring (no agent)
+  Install: Lambda extension or Forwarder
+  Why: Ephemeral, can't run persistent agent
+
+Legacy/Mainframe:
+  → Agentless (API polling) or Proxy
+  Why: Cannot modify legacy systems
+
+Decision Summary:
+┌──────────────────┬──────────────────┬─────────────┐
+│ Platform         │ Model            │ Method      │
+├──────────────────┼──────────────────┼─────────────┤
+│ Linux/Windows VM │ Agent per host   │ Package mgr │
+│ Docker           │ Agent container  │ Docker run  │
+│ Kubernetes       │ Cluster + Daemon │ Helm chart  │
+│ Lambda           │ Extension        │ Layer       │
+│ Legacy           │ Agentless        │ API poll    │
+└──────────────────┴──────────────────┴─────────────┘
 ```
 
-### Documentation
+---
 
+### **Scenario 8: "Monitor Type Selection"**
+
+```
+What to alert on?
+
+Metric threshold breach:
+  → Metric Monitor
+  Example: CPU > 80%
+  Query: avg:system.cpu.user{*} > 80
+
+Log pattern:
+  → Log Monitor
+  Example: More than 10 errors in 5 minutes
+  Query: status:error service:payment-api
+  Threshold: > 10 in 5 min
+
+APM performance:
+  → APM Monitor
+  Example: p95 latency > 500ms
+  Query: p95:trace.http.request.duration{service:api} > 500
+
+Multiple conditions (AND/OR):
+  → Composite Monitor
+  Example: High CPU AND High Memory
+  Formula: a && b
+
+Change detection:
+  → Change Monitor
+  Example: Traffic increased 50% vs 1 hour ago
+  Query: avg:http.requests{*} increases > 50%
+
+Unusual pattern:
+  → Anomaly Monitor
+  Example: CPU behaving abnormally
+  Algorithm: ML-based anomaly detection
+
+Predict future issue:
+  → Forecast Monitor
+  Example: Disk will be full in 1 week
+  Query: forecast(avg:disk.used{*}, 'linear', 1w) >= 90
+
+Decision Tree:
+┌─ Simple threshold → Metric Monitor
+├─ Log pattern → Log Monitor
+├─ Need AND/OR logic → Composite Monitor
+├─ Detect change → Change Monitor
+├─ Unusual behavior → Anomaly Monitor
+└─ Predict future → Forecast Monitor
+```
+
+---
+
+## 🔍 Query Quick Reference
+
+### **Query Syntax Cheatsheet**
+
+```bash
+Format: <agg>:<metric>{<filters>} [by {<tags>}] [.function()]
+
+# Basic
+avg:system.cpu.user{*}
+sum:http.requests{env:production}
+max:database.connections{*} by {host}
+
+# Filters
+{env:production}                    # Single tag
+{env:production,service:api}        # AND
+{env:production OR env:staging}     # OR
+{service:web-*}                     # Wildcard
+{env:production,-service:test}      # NOT
+
+# Functions
+.as_rate()          # Count to rate (per second)
+.as_count()         # Rate to count
+.rollup(avg, 60)    # Average in 60s windows
+timeshift(..., 86400)  # Compare to 1 day ago (86400s)
+anomalies(..., 'basic', 2)  # Anomaly detection
+forecast(..., 'linear', 1w)  # Forecast 1 week ahead
+ewma_5(...)         # Exponential smoothing
+
+# Arithmetic
+(a - b) / a * 100   # Calculate percentage
+a + b               # Sum metrics
+a / b               # Divide metrics
+
+# Examples
+Error rate %:
+(sum:http.errors{*} / sum:http.requests{*}) * 100
+
+Free memory %:
+(avg:system.mem.total{*} - avg:system.mem.used{*}) / avg:system.mem.total{*} * 100
+
+Compare to yesterday:
+avg:system.cpu.user{*}
+timeshift(avg:system.cpu.user{*}, 86400)
+```
+
+---
+
+### **Log Search Quick Reference**
+
+```bash
+# Basic search
+service:web-api
+status:error
+env:production
+
+# Combine (implicit AND)
+service:web-api status:error
+
+# Boolean operators
+service:web-api AND status:error
+status:(error OR warning)
+service:web-api -status:info  # NOT
+
+# Wildcards
+service:web-*
+message:*timeout*
+
+# Numeric ranges
+@http.response_time:[100 TO 500]
+@http.response_time:>1000
+@user.age:<18
+
+# Facets
+@user.id:12345
+@http.status_code:500
+-@error.type:*  # Doesn't have error.type
+
+# Time
+@timestamp:[now-1h TO now]
+
+# Common patterns
+# Find errors for specific user:
+service:payment-api status:error @user.id:12345
+
+# Find slow requests:
+service:api @duration:>1000
+
+# Find failed payments:
+service:payment status:error @transaction.type:payment
+```
+
+---
+
+## 🏷️ Tagging Best Practices
+
+### **Unified Service Tagging (Required)**
+
+```yaml
+# Always include (standard across all services):
+env: production
+service: payment-api
+version: v1.2.3
+
+Why:
+- env: Filter by environment
+- service: Group by service
+- version: Correlate with deployments
+
+How to set:
+# Agent config
+tags:
+  - env:production
+  - service:payment-api
+  - version:v1.2.3
+
+# Environment variables
+DD_ENV=production
+DD_SERVICE=payment-api
+DD_VERSION=v1.2.3
+
+# APM automatic
+DD_SERVICE=payment-api DD_ENV=production DD_VERSION=v1.2.3 ddtrace-run python app.py
+```
+
+---
+
+### **Additional Recommended Tags**
+
+```yaml
+Infrastructure:
+  datacenter: us-east-1
+  availability_zone: us-east-1a
+  instance_type: t3.large
+  host: web-server-01
+
+Team/Org:
+  team: backend
+  squad: payments
+  cost_center: engineering
+
+Business:
+  criticality: high
+  customer_tier: premium
+
+Banking-Specific:
+  channel: internet-banking
+  transaction_type: payment
+  compliance_scope: pci
+  business_unit: retail
+```
+
+---
+
+## 🚨 Troubleshooting Checklist
+
+### **Agent Not Sending Data**
+
+```bash
+Step 1: Verify agent status
+  sudo datadog-agent status
+  → Look for "Forwarder" section, should say "Running"
+
+Step 2: Check connectivity
+  curl -v https://api.datadoghq.com
+  → Should return 200 OK
+  → If fails: Firewall/proxy issue
+
+Step 3: Verify API key
+  sudo datadog-agent config | grep api_key
+  → Should match key in Datadog UI (Organization Settings → API Keys)
+
+Step 4: Check site setting
+  sudo datadog-agent config | grep site
+  → US1: datadoghq.com
+  → EU1: datadoghq.eu
+  → Must match your login URL
+
+Step 5: Check logs for errors
+  sudo tail -f /var/log/datadog/agent.log
+  → Look for ERROR or WARN lines
+
+Step 6: Run diagnostics
+  sudo datadog-agent diagnose
+  → Auto-checks common issues
+
+Step 7: Send flare (support bundle)
+  sudo datadog-agent flare
+  → Sends diagnostics to Datadog support
+```
+
+---
+
+### **High Metric Cardinality**
+
+```bash
+Problem: Metric count exploding, high bill
+
+Identify:
+  1. Go to Metrics → Summary
+  2. Sort by "# of Tags"
+  3. Look for metrics with > 1000 timeseries
+
+Root Cause:
+  High-cardinality tag (user_id, request_id, timestamp)
+
+Fix:
+  Option 1: Remove high-cardinality tag
+    ❌ tags: [user_id:12345]
+    ✅ tags: [user_tier:premium]
+  
+  Option 2: Use logs instead
+    Metrics: Aggregate data (user_tier, status)
+    Logs: Specific data (user_id, request_id)
+  
+  Option 3: Bucket values
+    ❌ response_time:245ms (unique each time)
+    ✅ response_time_bucket:200-300ms (few buckets)
+
+Prevention:
+  - Review tag cardinality monthly
+  - Alert on metrics with > 1000 timeseries
+  - Code review: Check tags before deploying
+```
+
+---
+
+### **Missing Logs from Containers**
+
+```yaml
+Checklist:
+
+□ Agent logs enabled?
+  DD_LOGS_ENABLED=true
+
+□ Container log collection enabled?
+  DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+
+□ Docker socket mounted?
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+
+□ Correct permissions?
+  Agent container user must be in docker group
+
+□ Container using stdout/stderr?
+  → Agent only collects stdout/stderr, not file logs
+
+□ Check agent status:
+  docker exec dd-agent agent status
+  → Look for "Logs Agent" section
+
+□ Label filtering?
+  Check if container excluded by label filters
+  
+□ Log volume limits?
+  Check if hit rate limits (10MB/s per container)
+```
+
+---
+
+## 💰 Cost Quick Reference
+
+### **Pricing Summary (As of 2026)**
+
+```
+Infrastructure Monitoring:
+  $15 per host per month
+
+APM:
+  $31 per host per month
+  + $1.70 per million spans indexed
+
+Log Management:
+  $0.10 per GB ingested
+  $1.27 per million log events indexed
+
+Custom Metrics:
+  $0.05 per metric per month
+
+RUM:
+  $1.50 per thousand sessions
+
+Synthetic Monitoring:
+  $5 per 10,000 API test runs
+
+Network Performance Monitoring:
+  $5 per host per month
+```
+
+---
+
+### **Cost Calculation Examples**
+
+```
+Example 1: Small Startup (10 hosts)
+├─ Infrastructure: 10 × $15 = $150
+├─ APM: 10 × $31 = $310
+├─ Logs: 100GB × $0.10 = $10
+└─ Total: ~$470/month
+
+Example 2: Medium Company (100 hosts)
+├─ Infrastructure: 100 × $15 = $1,500
+├─ APM: 100 × $31 = $3,100
+├─ Logs: 1TB × $0.10 = $100
+├─ Custom Metrics: 500 × $0.05 = $25
+└─ Total: ~$4,725/month
+
+Example 3: Banking (200 hosts, heavy monitoring)
+├─ Infrastructure: 200 × $15 = $3,000
+├─ APM: 200 × $31 = $6,200
+├─ Logs: 5TB × $0.10 = $500
+├─ Log indexing: 100M events × $1.27/M = $127
+├─ Custom Metrics: 2000 × $0.05 = $100
+├─ RUM: 500K sessions × $1.50/1K = $750
+├─ Synthetics: 100K tests × $5/10K = $50
+└─ Total: ~$10,727/month
+```
+
+---
+
+## 🔗 Essential Links
+
+### **Datadog Sites**
+```
+US1 (default): https://app.datadoghq.com
+US3:           https://us3.datadoghq.com
+US5:           https://us5.datadoghq.com
+EU1:           https://app.datadoghq.eu
+```
+
+### **Documentation**
 ```
 Main Docs:     https://docs.datadoghq.com/
 API Docs:      https://docs.datadoghq.com/api/
 Learning:      https://learn.datadoghq.com/
 Status:        https://status.datadoghq.com/
+Agent GitHub:  https://github.com/DataDog/datadog-agent
 ```
 
 ---
 
-## 🎯 Common Use Cases
+## 📝 Quick Decision Tables
 
-### High CPU Alert
+### **When to Use Datadog vs Alternatives**
+
+```
+Choose Datadog if:
+✅ Want quick setup (< 1 week to production)
+✅ Small/medium team (< 20 DevOps engineers)
+✅ All-in-one solution needed
+✅ Have budget ($5K-$50K+/month)
+✅ Need 24/7 support
+✅ Cloud-native architecture
+
+Choose Self-Hosted (Prometheus + Grafana + ELK) if:
+✅ Large DevOps team (10+ engineers)
+✅ Data must stay on-premise (strict sovereignty)
+✅ Very tight budget
+✅ Want full control & customization
+✅ Have time to maintain (2-3 FTE ongoing)
+
+Choose New Relic if:
+✅ Simpler pricing preferred (user-based)
+✅ Strong mobile APM need
+✅ Less infrastructure monitoring needed
+```
+
+---
+
+## 📊 Banking-Specific Quick Reference
+
+### **Compliance Checklist**
 
 ```yaml
-Monitor: Metric Alert
-Query: avg:system.cpu.user{*} by {host} > 85
-Evaluation: last 5 minutes
-Multi-alert: Yes
-Notify: @pagerduty @slack-ops
-```
+Data Sovereignty:
+  □ Use EU site for GDPR (app.datadoghq.eu)
+  □ Use US site for US data (app.datadoghq.com)
+  □ Configure data scrubbing (mask PII)
+  □ Document data flows
 
-### Error Rate Alert
+Security:
+  □ API keys in secrets manager (not git)
+  □ RBAC configured (least privilege)
+  □ SSO enabled (SAML)
+  □ Audit logs enabled
+  □ IP whitelisting configured
 
-```yaml
-Monitor: Metric Alert  
-Query: (sum:trace.http.request.errors{*} / sum:trace.http.request.hits{*}) * 100 > 5
-Evaluation: last 10 minutes
-Notify: @pagerduty-engineering
-```
+Compliance Certifications:
+  ✅ SOC 2 Type II
+  ✅ ISO 27001
+  ✅ PCI-DSS (Service Provider Level 1)
+  ✅ HIPAA
+  ✅ GDPR compliant
 
-### Log Pattern Alert
-
-```bash
-Monitor: Log Alert
-Query: status:error service:payment-api
-Threshold: > 10 errors in 5 minutes
-Notify: @slack-alerts
-```
-
-### Disk Space Forecast
-
-```yaml
-Monitor: Forecast Monitor
-Query: avg:system.disk.used_pct{*} by {host}
-Alert when: Predicted to reach 90% in 1 week
-Notify: @email-ops
+SLO Recommendations:
+  Core Banking: 99.95% availability
+  Payment API: 99.99% availability
+  Mobile API: 99.9% availability
+  Internal Tools: 99.5% availability
 ```
 
 ---
 
-## 🔑 Environment Variables
+## 📝 Tóm Tắt
 
-### Agent
-
-```bash
-DD_API_KEY=<your_key>
-DD_SITE=datadoghq.com
-DD_HOSTNAME=my-host
-DD_TAGS="env:prod service:api"
-DD_LOGS_ENABLED=true
-DD_APM_ENABLED=true
-DD_PROCESS_AGENT_ENABLED=true
 ```
+This is a REFERENCE, not a tutorial:
+✓ Use for quick decisions
+✓ Lookup common patterns
+✓ Choose right tool for the job
+✓ Troubleshoot issues
 
-### APM
-
-```bash
-DD_SERVICE=my-service
-DD_ENV=production
-DD_VERSION=v1.2.3
-DD_TRACE_SAMPLE_RATE=1.0
-DD_TRACE_AGENT_HOSTNAME=localhost
-DD_TRACE_AGENT_PORT=8126
+NOT for:
+✗ Step-by-step learning (see main docs)
+✗ Comprehensive understanding (see 01-19)
+✗ Copy-paste without understanding
 ```
 
 ---
 
-## 🛠️ Troubleshooting
+**🎯 Knowledge Base - Always Here When You Need It**
 
-### Agent Not Sending Data
-
-```bash
-# 1. Check agent status
-sudo datadog-agent status
-
-# 2. Check connectivity
-curl -v https://api.datadoghq.com
-
-# 3. Check logs
-sudo tail -f /var/log/datadog/agent.log
-
-# 4. Verify API key
-sudo datadog-agent config | grep api_key
-
-# 5. Run diagnostics
-sudo datadog-agent diagnose
-```
-
-### High CPU/Memory Usage
-
-```yaml
-# Reduce check frequency
-min_collection_interval: 30
-
-# Reduce log file limit
-logs_config:
-  open_files_limit: 50
-
-# Disable unused features
-process_config:
-  enabled: "false"
-```
-
-### Missing Metrics
-
-```bash
-# Check integration
-sudo datadog-agent check <integration>
-
-# Check config syntax
-sudo datadog-agent configcheck
-
-# Force flush
-sudo datadog-agent flare
-```
+Keep this reference handy for fast lookups and smart decisions!
 
 ---
 
-## 📝 Quick Tips
-
+**📌 Your Personal Quick Notes**
 ```
-✅ Always use unified service tagging (env, service, version)
-✅ Keep tag cardinality low (< 1000 unique values)
-✅ Use structured JSON logging
-✅ Alert on symptoms, not causes
-✅ Include runbooks in alert messages
-✅ Sample high-volume metrics/logs
-✅ Use template variables in dashboards
-✅ Regular cost optimization reviews
-✅ Infrastructure as Code for monitors
-✅ Correlate metrics, logs, and traces
-```
-
----
-
-## 📚 Learning Path
-
-```
-1. Setup Agent ✅
-2. Create Dashboard ✅
-3. Send Custom Metrics ✅
-4. Setup APM ✅
-5. Configure Logs ✅
-6. Create Monitors ✅
-7. Define SLOs
-8. Optimize Costs
-9. Infrastructure as Code
-10. Advanced Features
-```
-
----
-
-**🎉 Knowledge Base Reference - Luôn Có Sẵn Khi Bạn Cần!**
-
-Keep this cheat sheet handy for quick reference. Practice makes perfect!
-
----
-
-**📌 Personal Notes**
-```
-(Add your own shortcuts, commands, and tips here)
+(Add your own shortcuts, decisions, patterns)
 
 
 
@@ -758,4 +811,3 @@ Keep this cheat sheet handy for quick reference. Practice makes perfect!
 
 
 ```
-

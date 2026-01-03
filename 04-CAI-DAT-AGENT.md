@@ -1,849 +1,778 @@
-# 04 - CÀI ĐẶT DATADOG AGENT
+# 04 - AGENT DEPLOYMENT KNOWLEDGE
 
-## 🎯 Mục Tiêu Bài Học
-Sau bài học này, bạn sẽ:
-- Biết cách cài đặt Agent trên nhiều nền tảng
-- Configure Agent cơ bản
-- Verify Agent hoạt động đúng
-- Troubleshoot các vấn đề thường gặp
+## 🎯 Mục Tiêu
+Hiểu deployment models, key decisions, gotchas khi deploy Datadog Agent. Knowledge để tự tin triển khai trong môi trường production.
 
 ---
 
-## 🚀 Chuẩn Bị
+## 📚 Bản Chất: What is Datadog Agent?
 
-### Prerequisites
-
-```
-✅ Tài khoản Datadog (Trial 14 ngày miễn phí)
-✅ API Key (lấy từ Datadog UI)
-✅ Quyền sudo/admin trên server
-✅ Internet connection (HTTPS outbound)
-```
-
-### Lấy API Key
+### **Agent Architecture**
 
 ```
-1. Login vào https://app.datadoghq.com
-2. Navigate to: Organization Settings → API Keys
-3. Copy API Key (hoặc tạo mới)
-
-Example: 1234567890abcdef1234567890abcdef
+┌─────────────────────────────────────────────────┐
+│  Application/Infrastructure                     │
+└─────────────────┬───────────────────────────────┘
+                  │ Collects metrics/logs/traces
+┌─────────────────▼───────────────────────────────┐
+│  Datadog Agent (Local process)                  │
+│  ├─ Core Agent (metrics, health)                │
+│  ├─ Trace Agent (APM traces)                    │
+│  ├─ Process Agent (process monitoring)          │
+│  └─ Logs Agent (log forwarding)                 │
+└─────────────────┬───────────────────────────────┘
+                  │ HTTPS (TLS 1.2+)
+┌─────────────────▼───────────────────────────────┐
+│  Datadog Backend (SaaS)                         │
+│  https://api.datadoghq.com                      │
+└─────────────────────────────────────────────────┘
 ```
 
-### Chọn Site Đúng
-
-```
-US1 (Default): app.datadoghq.com
-US3: us3.datadoghq.com
-US5: us5.datadoghq.com
-EU1: app.datadoghq.eu
-
-→ Check URL khi bạn login
-→ Dùng đúng site khi cài Agent!
-```
+**Key Points:**
+- Agent = lightweight process (~70MB RAM, 5% CPU typical)
+- Runs locally on each host/container
+- Push model: Agent → Datadog (not pull)
+- Written in Go (cross-platform)
+- Open source: https://github.com/DataDog/datadog-agent
 
 ---
 
-## 💻 Cài Đặt Trên Linux
+## 🏗️ Deployment Models
 
-### Ubuntu / Debian
-
-**One-line Installation:**
-
-```bash
-DD_AGENT_MAJOR_VERSION=7 \
-DD_API_KEY=<YOUR_API_KEY> \
-DD_SITE="datadoghq.com" \
-bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script.sh)"
-```
-
-**Step-by-step:**
-
-```bash
-# 1. Download and run install script
-export DD_API_KEY=<YOUR_API_KEY>
-export DD_SITE="datadoghq.com"
-
-curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script.sh \
-  -o /tmp/install_datadog.sh
-
-bash /tmp/install_datadog.sh
-
-# 2. Verify installation
-sudo datadog-agent status
-
-# 3. Start Agent
-sudo systemctl start datadog-agent
-
-# 4. Enable auto-start
-sudo systemctl enable datadog-agent
-```
-
-### CentOS / RHEL / Amazon Linux
-
-```bash
-DD_AGENT_MAJOR_VERSION=7 \
-DD_API_KEY=<YOUR_API_KEY> \
-DD_SITE="datadoghq.com" \
-bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script.sh)"
-
-# Start and enable
-sudo systemctl start datadog-agent
-sudo systemctl enable datadog-agent
-```
-
-### Manual Installation (APT)
-
-```bash
-# 1. Setup APT repository
-sudo apt-get update
-sudo apt-get install -y apt-transport-https curl gnupg
-
-# 2. Add Datadog GPG key
-sudo sh -c "echo 'deb [signed-by=/usr/share/keyrings/datadog-archive-keyring.gpg] \
-https://apt.datadoghq.com/ stable 7' > /etc/apt/sources.list.d/datadog.list"
-
-curl https://keys.datadoghq.com/DATADOG_APT_KEY_CURRENT.public \
-  | sudo gpg --dearmor -o /usr/share/keyrings/datadog-archive-keyring.gpg
-
-# 3. Install Agent
-sudo apt-get update
-sudo apt-get install -y datadog-agent
-
-# 4. Configure API key
-sudo sh -c "sed 's/api_key:.*/api_key: <YOUR_API_KEY>/' \
-/etc/datadog-agent/datadog.yaml.example > /etc/datadog-agent/datadog.yaml"
-
-# 5. Set site
-sudo sh -c "echo 'site: datadoghq.com' >> /etc/datadog-agent/datadog.yaml"
-
-# 6. Start Agent
-sudo systemctl restart datadog-agent
-```
-
----
-
-## 🪟 Cài Đặt Trên Windows
-
-### GUI Installation
-
-```powershell
-# 1. Download installer
-# https://s3.amazonaws.com/ddagent-windows-stable/datadog-agent-7-latest.amd64.msi
-
-# 2. Run installer (PowerShell as Administrator)
-Start-Process msiexec.exe -Wait -ArgumentList '/qn /i datadog-agent-7-latest.amd64.msi APIKEY="<YOUR_API_KEY>" SITE="datadoghq.com"'
-
-# 3. Verify
-& "$env:ProgramFiles\Datadog\Datadog Agent\bin\agent.exe" status
-```
-
-### Command Line Installation
-
-```powershell
-# PowerShell (Run as Administrator)
-
-# Download
-$agentUrl = "https://s3.amazonaws.com/ddagent-windows-stable/datadog-agent-7-latest.amd64.msi"
-$installerPath = "$env:TEMP\datadog-agent.msi"
-Invoke-WebRequest -Uri $agentUrl -OutFile $installerPath
-
-# Install
-$apiKey = "<YOUR_API_KEY>"
-$site = "datadoghq.com"
-
-msiexec /qn /i $installerPath APIKEY="$apiKey" SITE="$site"
-
-# Check status
-& "$env:ProgramFiles\Datadog\Datadog Agent\bin\agent.exe" status
-```
-
-### Config File Location (Windows)
+### **Model 1: Agent Per Host (Standard)**
 
 ```
-C:\ProgramData\Datadog\datadog.yaml
-C:\ProgramData\Datadog\conf.d\
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│   Host 1      │  │   Host 2      │  │   Host 3      │
+│  ┌─────────┐  │  │  ┌─────────┐  │  │  ┌─────────┐  │
+│  │ Agent   │  │  │  │ Agent   │  │  │  │ Agent   │  │
+│  └─────────┘  │  │  └─────────┘  │  │  └─────────┘  │
+│   App/Service │  │   App/Service │  │   App/Service │
+└───────────────┘  └───────────────┘  └───────────────┘
 ```
 
----
+**When to use:**
+- ✅ VMs (AWS EC2, GCP Compute, Azure VMs)
+- ✅ Bare metal servers
+- ✅ Traditional deployments
 
-## 🐳 Cài Đặt Trên Docker
+**Pros:**
+- ✅ Simple setup
+- ✅ Full host metrics
+- ✅ Easy troubleshooting
+- ✅ Standard approach
 
-### Single Container
+**Cons:**
+- ⚠️ One agent per host = more processes
+- ⚠️ Manual updates if not automated
 
-```bash
-docker run -d --name dd-agent \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  -v /proc/:/host/proc/:ro \
-  -v /sys/fs/cgroup/:/host/sys/fs/cgroup:ro \
-  -e DD_API_KEY=<YOUR_API_KEY> \
-  -e DD_SITE="datadoghq.com" \
-  -e DD_LOGS_ENABLED=true \
-  -e DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true \
-  -e DD_APM_ENABLED=true \
-  -e DD_APM_NON_LOCAL_TRAFFIC=true \
-  datadog/agent:latest
-```
-
-**Explanation:**
-```
--v /var/run/docker.sock     # Monitor Docker
--v /proc/                   # System metrics
--v /sys/fs/cgroup/          # Container metrics
--e DD_LOGS_ENABLED          # Enable log collection
--e DD_APM_ENABLED           # Enable APM
--e DD_APM_NON_LOCAL_TRAFFIC # Accept traces from other containers
-```
-
-### Docker Compose
-
+**Configuration:**
 ```yaml
-# docker-compose.yml
-version: '3'
-services:
-  datadog:
-    image: datadog/agent:latest
-    container_name: dd-agent
-    environment:
-      - DD_API_KEY=${DD_API_KEY}
-      - DD_SITE=datadoghq.com
-      - DD_LOGS_ENABLED=true
-      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
-      - DD_APM_ENABLED=true
-      - DD_APM_NON_LOCAL_TRAFFIC=true
-      - DD_PROCESS_AGENT_ENABLED=true
-      - DD_DOCKER_LABELS_AS_TAGS={"my.custom.label":"custom_tag"}
-      - DD_TAGS='env:production service:my-app'
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /proc/:/host/proc/:ro
-      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
-    ports:
-      - "8126:8126/tcp"  # APM
-      - "8125:8125/udp"  # DogStatsD
-```
-
-**Start:**
-```bash
-# Create .env file
-echo "DD_API_KEY=<YOUR_API_KEY>" > .env
-
-# Start
-docker-compose up -d
-
-# Check logs
-docker-compose logs -f datadog
-
-# Check status
-docker exec -it dd-agent agent status
+Key decisions:
+- Hostname strategy (auto vs manual)
+- Tags (env, service, version)
+- Features enabled (logs, APM, processes)
+- Resource limits
 ```
 
 ---
 
-## ☸️ Cài Đặt Trên Kubernetes
+### **Model 2: Containerized Agent (Docker/Kubernetes)**
 
-### Helm Installation (Recommended)
+#### **Docker (Single Host)**
 
-```bash
-# 1. Add Datadog Helm repo
-helm repo add datadog https://helm.datadoghq.com
-helm repo update
-
-# 2. Create values file
-cat <<EOF > datadog-values.yaml
-datadog:
-  apiKey: <YOUR_API_KEY>
-  site: datadoghq.com
-  logs:
-    enabled: true
-    containerCollectAll: true
-  apm:
-    portEnabled: true
-  processAgent:
-    enabled: true
-  systemProbe:
-    enabled: true
-  tags:
-    - env:production
-    - cluster:my-cluster
-
-clusterAgent:
-  enabled: true
-  metricsProvider:
-    enabled: true  # For HPA with custom metrics
-
-agents:
-  useHostNetwork: true
-EOF
-
-# 3. Install
-helm install datadog-agent datadog/datadog \
-  -f datadog-values.yaml \
-  --namespace datadog \
-  --create-namespace
-
-# 4. Verify
-kubectl get pods -n datadog
-kubectl exec -it <POD_NAME> -n datadog -- agent status
+```
+┌─────────────────────────────────────────────┐
+│  Docker Host                                 │
+│  ┌─────────────┐  ┌──────────┐  ┌────────┐ │
+│  │ DD Agent    │  │ App 1    │  │ App 2  │ │
+│  │ Container   │  │ Container│  │Container│ │
+│  └─────────────┘  └──────────┘  └────────┘ │
+│         │              │              │      │
+│         └──────────────┴──────────────┘      │
+│              Monitors all containers         │
+└─────────────────────────────────────────────┘
 ```
 
-### DaemonSet (Manual)
+**When to use:**
+- ✅ Docker Compose stacks
+- ✅ Single-host container deployments
 
+**Key Considerations:**
 ```yaml
-# datadog-agent.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: datadog-secret
-  namespace: datadog
-type: Opaque
-stringData:
-  api-key: <YOUR_API_KEY>
----
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: datadog-agent
-  namespace: datadog
-spec:
-  selector:
-    matchLabels:
-      app: datadog-agent
-  template:
-    metadata:
-      labels:
-        app: datadog-agent
-      name: datadog-agent
-    spec:
-      serviceAccountName: datadog-agent
-      containers:
-      - name: datadog-agent
-        image: datadog/agent:latest
-        env:
-        - name: DD_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: datadog-secret
-              key: api-key
-        - name: DD_SITE
-          value: "datadoghq.com"
-        - name: DD_LOGS_ENABLED
-          value: "true"
-        - name: DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL
-          value: "true"
-        - name: DD_APM_ENABLED
-          value: "true"
-        - name: DD_KUBERNETES_KUBELET_HOST
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "200m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        volumeMounts:
-        - name: dockersocket
-          mountPath: /var/run/docker.sock
-        - name: procdir
-          mountPath: /host/proc
-          readOnly: true
-        - name: cgroups
-          mountPath: /host/sys/fs/cgroup
-          readOnly: true
-      volumes:
-      - name: dockersocket
-        hostPath:
-          path: /var/run/docker.sock
-      - name: procdir
-        hostPath:
-          path: /proc
-      - name: cgroups
-        hostPath:
-          path: /sys/fs/cgroup
+Volumes needed:
+  /var/run/docker.sock:  Monitor Docker
+  /proc/:                System metrics
+  /sys/fs/cgroup/:       Container metrics
+
+Environment variables:
+  DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: true
+  DD_APM_NON_LOCAL_TRAFFIC: true
+  DD_DOCKER_LABELS_AS_TAGS: true
 ```
+
+**Gotchas:**
+- ⚠️ Socket permissions (agent needs docker group)
+- ⚠️ Log collection needs explicit enable
+- ⚠️ APM requires port mapping (8126)
 
 ---
 
-## ☁️ Cài Đặt Trên Cloud Platforms
+#### **Kubernetes (Cluster)**
 
-### AWS EC2
-
-**Using AWS Systems Manager:**
-
-```bash
-# 1. Create SSM parameter for API key
-aws ssm put-parameter \
-  --name "/datadog/api_key" \
-  --value "<YOUR_API_KEY>" \
-  --type "SecureString"
-
-# 2. User data script for EC2
-#!/bin/bash
-DD_API_KEY=$(aws ssm get-parameter --name /datadog/api_key --with-decryption --query 'Parameter.Value' --output text)
-DD_AGENT_MAJOR_VERSION=7 \
-DD_API_KEY=$DD_API_KEY \
-DD_SITE="datadoghq.com" \
-bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script.sh)"
+```
+┌──────────────────────────────────────────────┐
+│  Kubernetes Cluster                           │
+│  ┌────────────────────────────────────┐      │
+│  │  Cluster Agent (Deployment)        │      │
+│  │  - Cluster-level metrics           │      │
+│  │  - Kubernetes API communication    │      │
+│  └────────────────────────────────────┘      │
+│              │                                │
+│  ┌───────────┴───────────────────────┐       │
+│  ▼           ▼           ▼           ▼       │
+│ Node 1     Node 2     Node 3     Node 4      │
+│ [Agent]    [Agent]    [Agent]    [Agent]     │
+│ DaemonSet  DaemonSet  DaemonSet  DaemonSet   │
+└──────────────────────────────────────────────┘
 ```
 
-**Auto-tagging:**
+**When to use:**
+- ✅ Kubernetes deployments (always)
+- ✅ OpenShift
 
+**Architecture:**
+```
+Cluster Agent (1 per cluster):
+├─ Collects cluster-level metrics
+├─ Communicates with K8s API
+├─ Reduces API server load
+└─ Provides HPA custom metrics
+
+Node Agents (DaemonSet - 1 per node):
+├─ Collects node & pod metrics
+├─ Forwards logs from containers
+├─ APM traces from pods
+└─ Reports to Cluster Agent
+```
+
+**Key Decisions:**
 ```yaml
-# /etc/datadog-agent/datadog.yaml
-collect_ec2_tags: true
+Deployment method:
+  Option 1: Helm chart (recommended)
+    - Easiest, most flexible
+    - Values file for config
+    - Easy upgrades
+    
+  Option 2: Operator
+    - GitOps friendly
+    - Custom resources
+    
+  Option 3: Manual YAML
+    - Full control
+    - Complex to maintain
 
-tags:
-  - team:backend
-  - project:ecommerce
-```
-
-### AWS ECS (Fargate)
-
-```json
-{
-  "family": "datadog-agent-task",
-  "containerDefinitions": [
-    {
-      "name": "datadog-agent",
-      "image": "datadog/agent:latest",
-      "essential": true,
-      "environment": [
-        {"name": "DD_API_KEY", "value": "<YOUR_API_KEY>"},
-        {"name": "DD_SITE", "value": "datadoghq.com"},
-        {"name": "ECS_FARGATE", "value": "true"},
-        {"name": "DD_APM_ENABLED", "value": "true"}
-      ],
-      "portMappings": [
-        {"containerPort": 8126, "protocol": "tcp"}
-      ]
-    }
-  ]
-}
-```
-
-### Google Cloud (GCE)
-
-```bash
-# Startup script
-#!/bin/bash
-DD_API_KEY=$(gcloud secrets versions access latest --secret="datadog-api-key")
-DD_AGENT_MAJOR_VERSION=7 \
-DD_API_KEY=$DD_API_KEY \
-DD_SITE="datadoghq.com" \
-bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script.sh)"
-
-# Enable GCP metadata collection
-echo "collect_gce_tags: true" >> /etc/datadog-agent/datadog.yaml
-```
-
-### Azure VM
-
-```powershell
-# Custom Script Extension
-$apiKey = (Get-AzKeyVaultSecret -VaultName "mykeyvault" -Name "datadog-api-key").SecretValueText
-
-DD_AGENT_MAJOR_VERSION=7 `
-DD_API_KEY=$apiKey `
-DD_SITE="datadoghq.com" `
-bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script.sh)"
-```
-
----
-
-## ⚙️ Configuration Cơ Bản
-
-### Main Config File
-
-```yaml
-# /etc/datadog-agent/datadog.yaml
-
-## REQUIRED
-api_key: <YOUR_API_KEY>
-site: datadoghq.com
-
-## TAGS
-tags:
-  - env:production
-  - service:my-app
-  - team:backend
-  - version:1.0.0
-
-## HOSTNAME
-hostname: my-server-01
-# hostname_fqdn: true  # Use FQDN instead
-
-## LOGS
-logs_enabled: true
-logs_config:
-  container_collect_all: true
-  processing_rules:
-    - type: exclude_at_match
-      name: exclude_debug
-      pattern: DEBUG
-
-## APM
-apm_config:
-  enabled: true
-  apm_non_local_traffic: true  # Accept from other hosts
-
-## PROCESS MONITORING
-process_config:
-  enabled: "true"
+Cluster Agent:
+  Enable? YES (always recommended)
+  Metrics Provider? YES (for HPA with custom metrics)
   
-## DOGSTATSD
-dogstatsd_port: 8125
-dogstatsd_non_local_traffic: true
-
-## PROXY (if needed)
-# proxy:
-#   https: http://proxy.company.com:3128
-#   no_proxy:
-#     - 169.254.169.254
+Node Agents:
+  useHostNetwork: true (recommended for APM)
+  Resource limits: Important!
+    memory: 512Mi limit, 256Mi request
+    cpu: 500m limit, 200m request
 ```
 
-### Common Configurations
+**Gotchas:**
+- ⚠️ RBAC permissions required (ServiceAccount, ClusterRole)
+- ⚠️ Cluster Agent needs API token
+- ⚠️ Network policies may block agent communication
+- ⚠️ Resource limits too low → OOMKilled
 
-**1. Custom Tags:**
+---
+
+### **Model 3: Agentless (API Polling)**
+
+```
+┌──────────────────────┐
+│  Datadog Backend     │
+│                      │
+│  Polls APIs ↓        │
+└──────────────────────┘
+           │
+    ┌──────┴──────┐
+    ▼             ▼
+┌────────┐  ┌────────┐
+│ AWS    │  │ Azure  │
+│ CloudWatch  GCP    │
+└────────┘  └────────┘
+```
+
+**When to use:**
+- ✅ Cloud services without agent (Lambda, S3, RDS)
+- ✅ SaaS integrations (GitHub, Slack, PagerDuty)
+- ⚠️ Legacy systems where agent can't be installed
+
+**Pros:**
+- ✅ No agent installation needed
+- ✅ Works with managed services
+
+**Cons:**
+- ❌ Limited metrics (only what API provides)
+- ❌ No logs/traces
+- ❌ Higher latency (polling delay)
+- ❌ No custom metrics
+
+**Banking Use Case:**
+```
+Hybrid model:
+├─ Core Banking (Legacy): Agentless + Proxy
+│   → Can't modify mainframe
+│   → Polls system APIs
+│
+├─ Middle Tier (Java): Agent per host
+│   → Full metrics, APM, logs
+│
+└─ Digital Banking (K8s): Cluster Agent + DaemonSet
+    → Modern, containerized
+```
+
+---
+
+## 🔑 Critical Configuration Decisions
+
+### **1. Hostname Strategy**
+
+**Problem:**
+```
+Default behavior: Agent auto-detects hostname
+Issue in containers: Hostname = container ID (gibberish)
+Issue in cloud: Hostname changes when instance replaced
+```
+
+**Solutions:**
 ```yaml
+Option 1: Auto (default)
+  hostname: auto-detected
+  Good for: Stable VMs
+  Bad for: Containers, ephemeral instances
+
+Option 2: FQDN
+  hostname_fqdn: true
+  Good for: Multiple datacenters
+  Bad for: Short names preferred
+
+Option 3: Custom
+  hostname: "web-prod-01"
+  Good for: Consistent naming
+  Bad for: Manual management
+
+Option 4: Tags only (recommended for containers)
+  hostname: none
+  tags: [service:web, env:prod, version:v1.2.3]
+  Good for: K8s, serverless
+```
+
+**Best Practice:**
+```yaml
+VMs/Bare Metal:
+  Use FQDN or custom hostname
+  
+Containers/K8s:
+  Don't rely on hostname
+  Use tags (env, service, version)
+  Let Datadog aggregate by tags
+```
+
+---
+
+### **2. Tagging Strategy**
+
+**Critical Decision:**
+```
+Tags = How you filter/group/aggregate
+
+Bad tagging:
+❌ No tags → Can't filter
+❌ High cardinality tags → Cost explosion
+❌ Inconsistent tags → Can't correlate
+
+Good tagging:
+✅ Unified Service Tagging (env, service, version)
+✅ Low cardinality
+✅ Consistent across all agents
+```
+
+**Recommended Tags:**
+```yaml
+# Required (Unified Service Tagging)
+env: production
+service: payment-api
+version: v1.2.3
+
+# Infrastructure
+datacenter: us-east-1
+availability_zone: us-east-1a
+instance_type: t3.large
+
+# Team/Business
+team: backend
+cost_center: engineering
+criticality: high
+
+# Custom (banking example)
+channel: internet-banking
+transaction_type: payment
+compliance_scope: pci
+```
+
+**Tag Sources:**
+```yaml
+# 1. Static (in config)
 tags:
   - env:production
-  - datacenter:us-east-1
-  - role:web
-  - team:payments
-```
+  - team:backend
 
-**2. Hostname Override:**
-```yaml
-hostname: custom-hostname
-# Useful when multiple containers/processes on same host
-```
+# 2. Environment variables
+DD_TAGS="env:prod service:api"
 
-**3. Log Collection:**
-```yaml
-logs_enabled: true
-logs_config:
-  container_collect_all: true
-  open_files_limit: 100
-```
+# 3. Auto-discovery
+collect_ec2_tags: true
+collect_gce_tags: true
 
-**4. Enable APM:**
-```yaml
-apm_config:
-  enabled: true
-  apm_non_local_traffic: true
-  analyzed_spans:
-    my-service|endpoint: 1  # Sample 100%
+# 4. Docker labels
+DD_DOCKER_LABELS_AS_TAGS: '{"app":"service","version":"version"}'
+
+# 5. Kubernetes annotations
+DD_KUBERNETES_POD_LABELS_AS_TAGS: '{"app":"service"}'
 ```
 
 ---
 
-## ✅ Verify Installation
+### **3. Feature Enablement**
 
-### Check Agent Status
+**Decisions:**
+```yaml
+What to enable?
 
-```bash
-# Linux
-sudo datadog-agent status
+✅ Infrastructure Monitoring (always)
+  - System metrics (CPU, RAM, disk)
+  - Network
+  - Default integrations
 
-# Windows
-& "$env:ProgramFiles\Datadog\Datadog Agent\bin\agent.exe" status
-
-# Docker
-docker exec dd-agent agent status
-
-# Kubernetes
-kubectl exec -it <POD_NAME> -n datadog -- agent status
+🤔 Logs (if needed)
+  logs_enabled: true
+  Cost: $0.10/GB ingested
+  Consideration: Volume can be high
+  
+🤔 APM (if APM needed)
+  apm_config.enabled: true
+  Cost: $31/host + per span indexed
+  Consideration: Instrumentation needed
+  
+🤔 Process Monitoring
+  process_config.enabled: true
+  Cost: Included
+  Consideration: CPU overhead
+  
+🤔 Network Performance Monitoring
+  system_probe_config.enabled: true
+  Cost: Separate SKU
+  Consideration: Kernel requirements
 ```
 
-**Expected Output:**
-```
-===============
-Agent (v7.49.1)
-===============
+**Banking Recommendation:**
+```yaml
+Core Banking Tier:
+  ✅ Infrastructure monitoring
+  ✅ Logs (compliance/audit)
+  ✅ APM (critical transactions)
+  ❌ Process monitoring (too noisy)
 
-  Status date: 2026-01-01 10:30:15.123 UTC
-  Agent start: 2026-01-01 10:00:00.000 UTC
-  Pid: 12345
-  Go Version: go1.21.0
-  Python Version: 3.11.0
-  Build arch: amd64
-  Agent flavor: agent
-  Log Level: info
-
-  Paths
-  =====
-    Config File: /etc/datadog-agent/datadog.yaml
-    conf.d: /etc/datadog-agent/conf.d
-    checks.d: /etc/datadog-agent/checks.d
-
-  Clocks
-  ======
-    NTP offset: 0.0012s
-    System UTC time: 2026-01-01 10:30:15.123 UTC
-
-  Host Info
-  =========
-    Hostname: my-server-01
-    OS: linux
-    Platform: ubuntu
-    Kernel Version: 5.15.0
-    Processor: Intel(R) Xeon(R) CPU @ 2.50GHz
-    ...
-
-  Collector
-  =========
-    Running Checks
-    ==============
-      cpu (1.0.0)
-      ---------------
-        Instance ID: cpu [OK]
-        Total Runs: 120
-        Metric Samples: 7, Total: 840
-        Events: 0, Total: 0
-        Service Checks: 0, Total: 0
-      
-      disk (1.0.0)
-      ------------
-        Instance ID: disk:abc123 [OK]
-        ...
-        
-  Logs Agent
-  ==========
-    Reliable: true
-    Status: Running
-    Inputs: ...
-```
-
-### Send Test Metric
-
-```bash
-# Using datadog-agent command
-echo -n "custom.metric:1|g|#env:test" | \
-  nc -u -w1 localhost 8125
-
-# Using API
-curl -X POST "https://api.datadoghq.com/api/v1/series" \
-  -H "Content-Type: application/json" \
-  -H "DD-API-KEY: <YOUR_API_KEY>" \
-  -d '{
-    "series": [{
-      "metric": "test.metric",
-      "points": [['"$(date +%s)"', 1]],
-      "type": "gauge",
-      "host": "test-host",
-      "tags": ["env:test"]
-    }]
-  }'
-```
-
-### Check in UI
-
-```
-1. Navigate to: Infrastructure → Infrastructure List
-   → Should see your host
-
-2. Navigate to: Metrics → Explorer
-   → Search for "system.cpu.user"
-   → Filter by your hostname
-
-3. Navigate to: Dashboards → System - Overview
-   → Select your host
+Digital Banking Tier:
+  ✅ All features enabled
+  ✅ RUM for frontend
+  ✅ Synthetic monitoring
 ```
 
 ---
 
-## 🔧 Troubleshooting
+### **4. Network & Security**
 
-### Agent Not Starting
+**Connectivity Requirements:**
+```
+Agent needs HTTPS outbound access:
 
-**Check logs:**
+US1 Site:
+- Metrics: https://api.datadoghq.com (443)
+- Logs: https://http-intake.logs.datadoghq.com (443)
+- Traces: https://trace.agent.datadoghq.com (443)
+- Process: https://process.datadoghq.com (443)
+
+EU Site:
+- Metrics: https://api.datadoghq.eu (443)
+- Logs: https://http-intake.logs.datadoghq.eu (443)
+- ...
+```
+
+**Firewall Rules:**
 ```bash
-# Linux
-sudo tail -f /var/log/datadog/agent.log
+# Allow outbound HTTPS
+iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
 
-# Windows
-Get-Content "C:\ProgramData\Datadog\logs\agent.log" -Tail 50 -Wait
+# Allow APM traces from other containers
+iptables -A INPUT -p tcp --dport 8126 -j ACCEPT
 
-# Docker
-docker logs dd-agent -f
+# Allow DogStatsD metrics
+iptables -A INPUT -p udp --dport 8125 -j ACCEPT
 ```
 
-**Common issues:**
-```
-❌ Invalid API key
-   → Check datadog.yaml, verify key in UI
-
-❌ Wrong site
-   → Check site setting matches your login URL
-
-❌ Network/Firewall
-   → Test: curl https://api.datadoghq.com
-   → Check firewall allows port 443 outbound
-
-❌ Permissions
-   → Agent needs read access to /proc, /sys
-   → Check file permissions
-```
-
-### Agent Running But No Data
-
-```bash
-# 1. Check connectivity
-sudo datadog-agent diagnose
-
-# 2. Flare (send diagnostics to support)
-sudo datadog-agent flare
-
-# 3. Check specific integration
-sudo datadog-agent check cpu
-
-# 4. Verify config
-sudo datadog-agent config
-```
-
-### High CPU/Memory Usage
-
+**Proxy Setup:**
 ```yaml
-# Tune config in datadog.yaml
+# If behind corporate proxy
+proxy:
+  https: http://proxy.company.com:3128
+  no_proxy:
+    - 169.254.169.254  # AWS metadata
+    - 169.254.170.2   # ECS metadata
+```
 
-# Reduce check frequency
-min_collection_interval: 30  # Default: 15 seconds
+**Security Hardening:**
+```yaml
+Banking requirements:
 
-# Reduce log processing
-logs_config:
-  open_files_limit: 50  # Default: 100
+1. API Key Protection:
+   ✅ Use secrets manager (AWS Secrets, Vault)
+   ✅ Never commit to git
+   ✅ Rotate periodically
 
-# Disable unused features
-process_config:
-  enabled: "false"
+2. TLS:
+   ✅ Min TLS 1.2
+   ✅ Verify certificates
+   
+3. RBAC:
+   ✅ Least privilege (read-only where possible)
+   ✅ Service account per team
+   
+4. Data Scrubbing:
+   ✅ Mask PII before sending
+   ✅ Log processing rules
+   
+5. Network Isolation:
+   ✅ Private subnets
+   ✅ VPC endpoints (AWS)
+   ✅ Private link (Azure)
+```
+
+---
+
+## ⚠️ Common Gotchas & Troubleshooting
+
+### **1. Agent Not Sending Data**
+
+**Symptoms:**
+```
+- Agent status shows OK
+- No data in Datadog UI
+- No errors in logs
+```
+
+**Troubleshooting Checklist:**
+```bash
+# 1. Verify API key
+datadog-agent config | grep api_key
+→ Wrong key? Update datadog.yaml
+
+# 2. Check connectivity
+curl -v https://api.datadoghq.com
+→ Blocked? Check firewall/proxy
+
+# 3. Verify site setting
+datadog-agent config | grep site
+→ Wrong site? app.datadoghq.com vs app.datadoghq.eu
+
+# 4. Check agent logs
+tail -f /var/log/datadog/agent.log
+→ Look for connection errors
+
+# 5. Run diagnostics
+datadog-agent diagnose
+→ Auto-checks common issues
+```
+
+---
+
+### **2. High Cardinality Explosion**
+
+**Symptoms:**
+```
+- Custom metric count exploding
+- High bill
+- Metrics not appearing
+```
+
+**Root Cause:**
+```yaml
+# Bad: High cardinality tag
+tags:
+  - user_id:12345  # ❌ Millions of unique values
+  - request_id:abc123  # ❌ Every request unique
+  - timestamp:1234567890  # ❌ Always changing
+
+# Good: Low cardinality
+tags:
+  - user_tier:premium  # ✅ 3-4 values
+  - endpoint:/api/users  # ✅ ~100 endpoints
+  - status:success  # ✅ 2-3 values
+```
+
+**Fix:**
+```
+1. Identify high cardinality tags
+   → Datadog UI: Metrics → Summary → sort by cardinality
+   
+2. Remove or bucket tags
+   → user_id → user_tier
+   → specific_error_message → error_type
+   
+3. Use logs for high cardinality data
+   → Request IDs, user IDs → logs, not metrics
+```
+
+---
+
+### **3. Resource Exhaustion**
+
+**Symptoms:**
+```
+- Agent using 100% CPU
+- OOMKilled in Kubernetes
+- Slow metrics collection
+```
+
+**Causes & Fixes:**
+```yaml
+Issue 1: Too many integrations enabled
+Fix: Disable unused checks
+  conf.d/*/conf.yaml → rename to .example
+
+Issue 2: Log volume too high
+Fix: Filter logs at agent
+  logs_config:
+    processing_rules:
+      - type: exclude_at_match
+        pattern: "health_check"
+
+Issue 3: APM span volume
+Fix: Sampling
+  apm_config:
+    analyzed_spans:
+      service-name|*: 0.1  # 10% sampling
+
+Issue 4: Process agent overhead
+Fix: Reduce frequency or disable
+  process_config:
+    enabled: "false"
+```
+
+---
+
+### **4. Missing Container Logs**
+
+**Symptoms:**
+```
+- Infrastructure metrics OK
+- Container logs not appearing
+```
+
+**Checklist:**
+```yaml
+1. Logs enabled?
+   DD_LOGS_ENABLED=true
+
+2. Container collection enabled?
+   DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+
+3. Docker socket mounted?
+   volumes:
+     - /var/run/docker.sock:/var/run/docker.sock:ro
+
+4. Permissions?
+   → Agent needs docker group membership
+
+5. Stdout/stderr?
+   → Only collects stdout/stderr, not file logs
+
+6. Label filters?
+   → Check if container excluded by filters
+```
+
+---
+
+## 📊 Deployment Patterns
+
+### **Pattern 1: Phased Rollout**
+
+```
+Phase 1: Pilot (Week 1-2)
+├─ Deploy to 2-3 non-critical hosts
+├─ Verify data flowing
+├─ Create base dashboards
+└─ Test alert sensitivity
+
+Phase 2: Staging (Week 3-4)
+├─ Deploy to all staging
+├─ Enable APM
+├─ Enable logs
+└─ Test under load
+
+Phase 3: Production (Week 5+)
+├─ Deploy to 10% production
+├─ Monitor cost & performance
+├─ Adjust sampling/filtering
+├─ Roll out to 50%, then 100%
+└─ Final tuning
+
+Banking approach: Extra cautious
+→ Pilot → Dev → QA → UAT → Staging → Prod (10% → 50% → 100%)
+```
+
+---
+
+### **Pattern 2: Blue/Green Agent Upgrade**
+
+```
+Issue: Agent upgrades can be risky
+
+Strategy:
+1. Deploy new agent version to "green" hosts
+2. Monitor for issues (24 hours)
+3. If stable, upgrade "blue" hosts
+4. If issues, quick rollback
+
+For Kubernetes:
+→ Use DaemonSet update strategy: RollingUpdate
+   maxUnavailable: 1
+   → Upgrades 1 node at a time
+```
+
+---
+
+### **Pattern 3: Multi-Region Deployment**
+
+```
+Banking requirement: Data sovereignty
+
+Architecture:
+Region 1 (US):
+  → Datadog US1 site (app.datadoghq.com)
+  → US customer data
+  
+Region 2 (EU):
+  → Datadog EU site (app.datadoghq.eu)
+  → EU customer data (GDPR)
+  
+Region 3 (APAC):
+  → Option 1: US3 site (us3.datadoghq.com)
+  → Option 2: Dual-send (both US & EU)
+
+Key: Different API keys per region
+```
+
+---
+
+## 💰 Cost Optimization
+
+### **Cost Drivers:**
+```
+1. Host count: $15/host/month (infra) + $31 (APM)
+2. Custom metrics: $0.05/metric/month
+3. Logs ingested: $0.10/GB
+4. Log indexing: $1.27/million events
+5. APM spans: $1.70/million indexed
+```
+
+### **Optimization Strategies:**
+```
+1. Exclude ephemeral hosts
+   → Short-lived CI runners don't need agent
+   
+2. Sample logs
+   → Info logs: 10% sample
+   → Error logs: 100%
+   
+3. Sample APM
+   → Normal traces: 10%
+   → Errors: 100%
+   → Slow traces: 100%
+   
+4. Filter at agent
+   → Don't send health checks
+   → Don't send debug logs
+   
+5. Short retention
+   → Logs: 7 days vs 30 days
+   → Old logs to S3 (cheaper)
 ```
 
 ---
 
 ## 📝 Tóm Tắt
 
-### Installation Checklist
-
+### **Key Decisions:**
 ```
-✅ Choose right platform (Linux/Windows/Docker/K8s)
-✅ Get API key from Datadog UI
-✅ Set correct site (US1/EU1/etc)
-✅ Run installation command
-✅ Configure datadog.yaml
-✅ Add tags
-✅ Enable features (logs, APM)
-✅ Start agent service
-✅ Verify with: datadog-agent status
-✅ Check data in UI
-```
-
-### Key Commands
-
-```bash
-# Status
-datadog-agent status
-
-# Start/Stop/Restart
-systemctl start datadog-agent
-systemctl stop datadog-agent
-systemctl restart datadog-agent
-
-# Check specific integration
-datadog-agent check <CHECK_NAME>
-
-# View config
-datadog-agent config
-
-# Diagnostics
-datadog-agent diagnose
-
-# Send flare (support bundle)
-datadog-agent flare <CASE_ID>
-```
-
-### Config File Locations
-
-```
-Linux:    /etc/datadog-agent/datadog.yaml
-Windows:  C:\ProgramData\Datadog\datadog.yaml
-Docker:   Environment variables
-K8s:      ConfigMap or Helm values
-```
-
----
-
-## 🤔 Câu Hỏi Cần Biết
-
-### Deployment considerations:
-
-```
-1. Tạo tài khoản Datadog trial
-2. Cài Agent trên local VM/machine
-3. Verify host xuất hiện trong UI
-4. Take screenshot của Infrastructure List
-```
-
-### Configuration decisions:
-
-```
-1. Add custom tags:
-   - env:lab
-   - student:your-name
+1. Deployment Model
+   → VMs: Agent per host
+   → Containers: Containerized agent
+   → K8s: Cluster Agent + DaemonSet
    
-2. Enable logs collection
-
-3. Verify tags trong UI
-
-4. Tìm metric: system.cpu.user
-   với tags của bạn
+2. Tagging Strategy
+   → Unified Service Tagging (env, service, version)
+   → Low cardinality
+   
+3. Features
+   → Infra: Always
+   → Logs: If needed (cost consideration)
+   → APM: For critical services
+   
+4. Security
+   → API key in secrets manager
+   → Data scrubbing for PII
+   → Network isolation
 ```
 
-### Container deployment:
-
+### **Gotchas to Remember:**
 ```
-1. Run Datadog Agent container
-
-2. Run example app container:
-   docker run -d --name web nginx
-
-3. Verify Agent monitors the nginx container
-
-4. Check logs của nginx trong Datadog UI
+❌ High cardinality tags → Cost explosion
+❌ Missing socket mount → No container metrics
+❌ Wrong site → No data
+❌ No resource limits (K8s) → OOMKilled
+❌ Forgot to enable logs → No logs
 ```
 
-### Troubleshooting checklist:
-
+### **Banking Considerations:**
 ```
-Scenario: Agent installed but no data
-
-Steps:
-1. Check agent status
-2. Check logs
-3. Test connectivity
-4. Verify API key
-5. Check tags
-
-Document your findings
+✅ Data sovereignty (EU site for GDPR)
+✅ Data scrubbing (mask PII)
+✅ Audit trail (log all agent actions)
+✅ High availability (multiple agents per tier)
+✅ Compliance (SOC 2, PCI-DSS)
 ```
 
 ---
 
 ## ➡️ Bước Tiếp Theo
 
-Bạn đã cài đặt thành công Agent!
-
-**Bài tiếp theo**: [05 - Dashboard và Visualization](05-DASHBOARD.md)
-
-Trong bài tiếp theo, chúng ta sẽ học cách tạo dashboard để visualize metrics.
+**Related Topics:**
+- [03 - Architecture](03-KIEN-TRUC-DATADOG.md) - Understand agent internals
+- [05 - Dashboards](05-DASHBOARD.md) - Visualize agent data
+- [22 - Decision Frameworks](22-DECISION-FRAMEWORKS.md) - Agent deployment decisions
 
 ---
 
 **📌 Ghi Chú Của Bạn**
 ```
-(Viết command đã dùng, lỗi gặp phải, solutions, etc.)
+(Deployment decisions, configurations, lessons learned)
 
 
 
@@ -853,4 +782,3 @@ Trong bài tiếp theo, chúng ta sẽ học cách tạo dashboard để visuali
 
 
 ```
-
